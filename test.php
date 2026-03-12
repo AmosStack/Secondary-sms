@@ -43,3 +43,6 @@ $pdf->writeHTML($html, true, false, true, false, '');
 
 // output the PDF (I for inline view, D for download)
 $pdf->Output('test_tcpdf.pdf', 'I');
+
+// trying to print pdf page using php and tpdf
+
