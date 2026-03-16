@@ -12,8 +12,8 @@ $student_id = intval($_GET['student_id']);
 $stmt = $conn->prepare("
     SELECT s.name, c.class_level, c.stream 
     FROM students s 
-    JOIN classes c ON s.class_id = c.id 
-    WHERE s.id = ?
+    JOIN classes c ON s.class_id = c.class_id 
+    WHERE s.student_id = ?
 ");
 $stmt->bind_param("i", $student_id);
 $stmt->execute();
@@ -30,9 +30,9 @@ $year = date("Y");
 
 // Fetch subjects and marks
 $stmt = $conn->prepare("
-    SELECT sub.name as subject_name, 
+    SELECT sub.name as subject_name, m.marks
     FROM marks m
-    JOIN subjects sub ON m.subject_id = sub.id
+    JOIN subjects sub ON m.subject_id = sub.subject_id
     WHERE m.student_id = ?
 ");
 $stmt->bind_param("i", $student_id);
@@ -43,8 +43,7 @@ $subjects = [];
 while ($row = $results->fetch_assoc()) {
     $subjects[] = [
         'name' => $row['subject_name'],
-        'test' => (int)$row['test'],
-        'exam' => (int)$row['exam'],
+        'marks' => (int)$row['marks'],
     ];
 }
 $stmt->close();
@@ -96,9 +95,8 @@ function getFinalComments($average) {
 $totalMarks = 0;
 $totalSubjects = 0;
 foreach ($subjects as $s) {
-    $sum = $s['test'] + $s['exam'];
-    if ($sum == 0) continue;
-    $totalMarks += $sum;
+    if ($s['marks'] == 0) continue;
+    $totalMarks += $s['marks'];
     $totalSubjects++;
 }
 $average = $totalSubjects ? round($totalMarks / $totalSubjects, 2) : 0;
@@ -150,9 +148,7 @@ $html = <<<EOD
     <thead>
         <tr>
             <th>SOMO</th>
-            <th>MAZOEZI</th>
-            <th>MTIHANI</th>
-            <th>JUMLA</th>
+            <th>ALAMA</th>
             <th>WASTANI</th>
             <th>DARAJA</th>
             <th>MAONI</th>
@@ -162,9 +158,9 @@ $html = <<<EOD
 EOD;
 
 foreach ($subjects as $subj) {
-    $sum = $subj['test'] + $subj['exam'];
+    $sum = $subj['marks'];
     if ($sum == 0) {
-        $html .= "<tr><td>{$subj['name']}</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>";
+        $html .= "<tr><td>{$subj['name']}</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>";
         continue;
     }
     $avg = $sum;
@@ -172,8 +168,6 @@ foreach ($subjects as $subj) {
 
     $html .= "<tr>
         <td>{$subj['name']}</td>
-        <td>{$subj['test']}</td>
-        <td>{$subj['exam']}</td>
         <td>{$sum}</td>
         <td>{$avg}</td>
         <td>{$grade}</td>
