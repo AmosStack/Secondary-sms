@@ -8,7 +8,8 @@ include 'includes/db.php';
     <title>View Classes</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body>
+<body class="bg-light">
+    <a href="dashboard.php" class="btn btn-secondary position-fixed top-0 end-0 m-3" style="z-index: 1030;">⬅️ Back to Dashboard</a>
     <div class="container mt-5">
         <div class="card shadow">
             <div class="card-header bg-primary text-white">
