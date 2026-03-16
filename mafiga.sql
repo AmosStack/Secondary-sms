@@ -12,14 +12,11 @@ START TRANSACTION;
 SET time_zone = "+00:00";
 
 
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8mb4 */;
-
 --
 -- Database: `mafiga`
 --
+CREATE DATABASE IF NOT EXISTS `mafiga` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+USE `mafiga`;
 
 -- --------------------------------------------------------
 
@@ -41,7 +38,6 @@ CREATE TABLE `admin` (
 -- Dumping data for table `admin`
 --
 
-
 -- --------------------------------------------------------
 
 --
@@ -49,7 +45,7 @@ CREATE TABLE `admin` (
 --
 
 CREATE TABLE `classes` (
-  `class_id` int(11) NOT NULL,
+  `class_id` int(11) NOT NULL AUTO_INCREMENT,
   `class_level` varchar(10) NOT NULL,
   `stream` varchar(50) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -126,8 +122,6 @@ CREATE TABLE `subjects` (
 --
 -- Dumping data for table `subjects`
 --
-
-
 --
 -- Indexes for dumped tables
 --
