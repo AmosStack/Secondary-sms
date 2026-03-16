@@ -8,6 +8,12 @@ $class_levels = [];
 while ($row = $class_levels_res->fetch_assoc()) {
     $class_levels[] = $row['class_level'];
 }
+
+// Stats for summary cards
+$total_classes  = $conn->query("SELECT COUNT(DISTINCT class_level) AS cnt FROM classes")->fetch_assoc()['cnt'];
+$total_streams  = $conn->query("SELECT COUNT(*) AS cnt FROM classes")->fetch_assoc()['cnt'];
+$total_subjects = $conn->query("SELECT COUNT(*) AS cnt FROM subjects")->fetch_assoc()['cnt'];
+$total_students = $conn->query("SELECT COUNT(*) AS cnt FROM students")->fetch_assoc()['cnt'];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -102,61 +108,35 @@ while ($row = $class_levels_res->fetch_assoc()) {
     <div class="col-md-9 col-lg-10 py-4">
       <h2 class="mb-4 text-primary text-center">📊 Mafiga School Management Dashboard</h2>
 
+      <!-- Stats Summary Row -->
+      <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+          <div class="dashboard-card text-center border-primary">
+            <div class="fs-1 fw-bold text-primary"><?= $total_classes ?></div>
+            <div class="text-muted">Total Classes</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="dashboard-card text-center border-info">
+            <div class="fs-1 fw-bold text-info"><?= $total_streams ?></div>
+            <div class="text-muted">Total Streams</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="dashboard-card text-center border-warning">
+            <div class="fs-1 fw-bold text-warning"><?= $total_subjects ?></div>
+            <div class="text-muted">Total Subjects</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="dashboard-card text-center border-success">
+            <div class="fs-1 fw-bold text-success"><?= $total_students ?></div>
+            <div class="text-muted">Total Students</div>
+          </div>
+        </div>
+      </div>
+
       <div class="row g-4">
-        <div class="col-md-4">
-          <a href="register_class.php" class="text-dark">
-            <div class="dashboard-card border-primary">
-              <h5>🏫 Register Class & Subjects</h5>
-              <p>Create classes and assign subjects.</p>
-            </div>
-          </a>
-        </div>
-
-        <div class="col-md-4">
-          <a href="register_student.php" class="text-dark">
-            <div class="dashboard-card border-success">
-              <h5>👨‍🎓 Register Students</h5>
-              <p>Add students and assign them to classes.</p>
-            </div>
-          </a>
-        </div>
-
-        <div class="col-md-4">
-          <a href="create_subject.php" class="text-dark">
-            <div class="dashboard-card border-info">
-              <h5>📚 Create Subjects</h5>
-              <p>Add subjects to the system.</p>
-            </div>
-          </a>
-        </div>
-
-        <div class="col-md-4">
-          <a href="enter_results.php" class="text-dark">
-            <div class="dashboard-card border-warning">
-              <h5>📝 Enter Results</h5>
-              <p>Input student marks per subject.</p>
-            </div>
-          </a>
-        </div>
-
-        <div class="col-md-4">
-          <a href="view_students.php" class="text-dark">
-            <div class="dashboard-card border-dark">
-              <h5>📋 View Students</h5>
-              <p>List of all students by class and stream.</p>
-            </div>
-          </a>
-        </div>
-
-        <div class="col-md-4">
-          <a href="view_marks.php" class="text-dark">
-            <div class="dashboard-card border-secondary">
-              <h5>📊 View Marks</h5>
-              <p>Check subject-wise results & grades.</p>
-            </div>
-          </a>
-        </div>
-
         <div class="col-md-4">
           <a href="analytics.php" class="text-dark">
             <div class="dashboard-card border-success">
