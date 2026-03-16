@@ -3,7 +3,6 @@ include 'includes/db.php';
 require_once 'vendor/autoload.php';
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
 $msg = "";
 
@@ -23,9 +22,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excel_file'])) {
             if ($index == 0) continue; // skip header
 
             $name = trim($row[0]);
-            $gender = trim($row[1]);
-            $class_level = trim($row[2]);
-            $stream = trim($row[3]);
+            $class_level = trim($row[1]);
+            $stream = trim($row[2]);
+
+            if ($name === '' || $class_level === '' || $stream === '') {
+                $skipped++;
+                continue;
+            }
 
             $stmt = $conn->prepare("SELECT id FROM classes WHERE class_level = ? AND stream = ?");
             $stmt->bind_param("ss", $class_level, $stream);
@@ -34,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excel_file'])) {
 
             if ($res->num_rows > 0) {
                 $class_row = $res->fetch_assoc();
-                $class_id = $class_row['id'];
+                $class_id = (int) $class_row['id'];
 
                 $check = $conn->prepare("SELECT id FROM students WHERE name = ? AND class_id = ?");
                 $check->bind_param("si", $name, $class_id);
@@ -42,8 +45,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excel_file'])) {
                 $check_res = $check->get_result();
 
                 if ($check_res->num_rows == 0) {
-                    $insert = $conn->prepare("INSERT INTO students (name, gender, class_id) VALUES (?, ?, ?)");
-                    $insert->bind_param("ssi", $name, $gender, $class_id);
+                    $insert = $conn->prepare("INSERT INTO students (name, class_id) VALUES (?, ?)");
+                    $insert->bind_param("si", $name, $class_id);
                     $insert->execute();
                     $inserted++;
                 } else {
@@ -63,11 +66,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excel_file'])) {
 // Handle Manual Registration
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register_manual'])) {
     $name = trim($_POST['name']);
-    $gender = $_POST['gender'];
     $class_level = $_POST['class_level'];
     $stream = $_POST['stream'];
 
-    if (!empty($name) && !empty($gender) && !empty($class_level) && !empty($stream)) {
+    if (!empty($name) && !empty($class_level) && !empty($stream)) {
         $stmt = $conn->prepare("SELECT id FROM classes WHERE class_level = ? AND stream = ?");
         $stmt->bind_param("ss", $class_level, $stream);
         $stmt->execute();
@@ -75,8 +77,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register_manual'])) {
 
         if ($stmt->fetch()) {
             $stmt->close();
-            $stmt = $conn->prepare("INSERT INTO students (name, gender, class_id) VALUES (?, ?, ?)");
-            $stmt->bind_param("ssi", $name, $gender, $class_id);
+            $stmt = $conn->prepare("INSERT INTO students (name, class_id) VALUES (?, ?)");
+            $stmt->bind_param("si", $name, $class_id);
             if ($stmt->execute()) {
                 $msg .= '<div class="alert alert-success">✅ Student registered successfully!</div>';
             } else {
@@ -98,52 +100,37 @@ $levels = $conn->query("SELECT DISTINCT class_level FROM classes ORDER BY class_
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Register Students</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-    <style>
-    .card {
-        border-radius: 12px;
-    }
-    label {
-        font-weight: 500;
-    }
-    </style>
-
 </head>
 <body class="bg-light">
 
 <div class="container mt-5">
-    <h2 class="mb-4">🧑‍🎓 Register Students</h2>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="text-primary">🧑‍🎓 Student Registration Portal</h3>
+        <a href="dashboard.php" class="btn btn-secondary">⬅️ Back to Dashboard</a>
+    </div>
     <?= $msg ?>
 
-    <div class="row">
+    <div class="card shadow">
+        <div class="card-body">
+            <div class="row">
         <!-- Manual Registration -->
-        <div class="col-md-6">
-            <div class="card shadow-sm mb-4">
-                <div class="card-body">
-                    <h5 class="card-title mb-3">✍️ Manual Registration</h5>
+        <div class="col-md-6 border-end">
+                    <h5 class="text-primary">📘 Manual Entry</h5>
                     <form method="POST" class="row g-3">
                         <input type="hidden" name="register_manual" value="1">
                         <div class="col-md-12">
-                            <label>Full Name</label>
+                            <label class="form-label">Student Name:</label>
                             <input type="text" name="name" class="form-control" required>
                         </div>
 
                         <div class="col-md-6">
-                            <label>Gender</label>
-                            <select name="gender" class="form-select" required>
-                                <option value="">-- Select --</option>
-                                <option value="Male">Male</option>
-                                <option value="Female">Female</option>
-                            </select>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label>Class Level</label>
+                            <label class="form-label">Select Class Level:</label>
                             <select name="class_level" id="class_level" class="form-select" required>
-                                <option value="">-- Select Class --</option>
+                                <option value="">--Select Level--</option>
                                 <?php while ($row = $levels->fetch_assoc()): ?>
                                     <option value="<?= $row['class_level'] ?>"><?= $row['class_level'] ?></option>
                                 <?php endwhile; ?>
@@ -151,59 +138,62 @@ $levels = $conn->query("SELECT DISTINCT class_level FROM classes ORDER BY class_
                         </div>
 
                         <div class="col-md-6">
-                            <label>Stream</label>
+                            <label class="form-label">Select Stream:</label>
                             <select name="stream" id="stream" class="form-select" required>
-                                <option value="">-- Select Stream --</option>
+                                <option value="">--Select Stream--</option>
                             </select>
                         </div>
 
-                        <div class="col-md-6">
-                            <label>&nbsp;</label>
-                            <button type="submit" class="btn btn-success w-100 mt-2">Register</button>
+                        <div class="col-md-12">
+                            <button type="submit" class="btn btn-primary w-100">➡️ Register Student</button>
                         </div>
                     </form>
                 </div>
-            </div>
-        </div>
 
         <!-- Excel Upload -->
         <div class="col-md-6">
-            <div class="card shadow-sm mb-4">
-                <div class="card-body">
-                    <h5 class="card-title mb-3">📥 Bulk Upload via Excel</h5>
+                    <h5 class="text-success">📂 Upload via Excel</h5>
                     <form method="POST" enctype="multipart/form-data">
                         <div class="mb-3">
-                            <label class="form-label">Choose Excel File (.xlsx)</label>
+                            <label class="form-label">Upload File:</label>
                             <input type="file" name="excel_file" accept=".xlsx" class="form-control" required>
-                            <div class="form-text">Expected columns: <b>Name</b>, <b>Gender</b>, <b>Class</b>, <b>Stream</b></div>
                         </div>
-                        <button type="submit" class="btn btn-primary">Upload & Save</button>
+                        <button type="submit" class="btn btn-success w-100">📤 Upload Students</button>
                     </form>
+
+                    <div class="mt-3 alert alert-info">
+                        <strong>Note:</strong> File must include columns <code>Name</code>, <code>Class</code>, and <code>Stream</code>.
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <a href="dashboard.php" class="btn btn-secondary mt-3">⬅️ Back to Dashboard</a>
 </div>
 
 
 <script>
-$(document).ready(function(){
-    $('#class_level').change(function(){
-        var classLevel = $(this).val();
-        if (classLevel !== '') {
-            $.ajax({
-                url: 'get_streams.php',
-                type: 'POST',
-                data: {class_level: classLevel},
-                success: function(response){
-                    $('#stream').html(response);
-                }
-            });
-        } else {
-            $('#stream').html('<option value="">-- Select Stream --</option>');
+document.addEventListener('DOMContentLoaded', function () {
+    var classLevelSelect = document.getElementById('class_level');
+    var streamSelect = document.getElementById('stream');
+
+    classLevelSelect.addEventListener('change', function () {
+        var classLevel = this.value;
+
+        if (!classLevel) {
+            streamSelect.innerHTML = '<option value="">--Select Stream--</option>';
+            return;
         }
+
+        fetch('get_streams.php?class_level=' + encodeURIComponent(classLevel), {
+            method: 'GET'
+        })
+            .then(function (response) { return response.text(); })
+            .then(function (html) {
+                streamSelect.innerHTML = html;
+            })
+            .catch(function () {
+                streamSelect.innerHTML = '<option value="">--Select Stream--</option>';
+            });
     });
 });
 </script>
