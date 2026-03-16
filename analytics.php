@@ -24,14 +24,28 @@ function getGradeAndRemark($form, $mark) {
 // Filter logic
 $term = $_GET['term'] ?? '';
 $year = $_GET['year'] ?? '';
-$whereClause = "";
-if ($term && $year) {
-    $whereClause = "WHERE term='$term' AND year='$year'";
+$conditions = [];
+if ($year !== '' && ctype_digit((string)$year)) {
+    $conditions[] = "YEAR(m.date_recorded) = " . (int)$year;
 }
+if ($term !== '' && ctype_digit((string)$term)) {
+    $termNum = (int)$term;
+    if ($termNum >= 1 && $termNum <= 3) {
+        $startMonth = (($termNum - 1) * 4) + 1;
+        $endMonth = $startMonth + 3;
+        $conditions[] = "MONTH(m.date_recorded) BETWEEN $startMonth AND $endMonth";
+    }
+}
+$whereClause = $conditions ? ("WHERE " . implode(" AND ", $conditions)) : "";
 
 // Subject-wise Analysis
 $subjects = [];
-$subQ = $conn->query("SELECT subject, AVG(mark) as avg_mark, COUNT(*) as total FROM marks $whereClause GROUP BY subject");
+$subQ = $conn->query("SELECT sub.name AS subject, AVG(m.marks) AS avg_mark, COUNT(DISTINCT m.student_id) AS total
+                       FROM marks m
+                       JOIN subjects sub ON m.subject_id = sub.id
+                       $whereClause
+                       GROUP BY sub.id, sub.name
+                       ORDER BY sub.name");
 while ($row = $subQ->fetch_assoc()) {
     $form = 5;
     $gradeData = getGradeAndRemark($form, $row['avg_mark']);
@@ -47,9 +61,15 @@ while ($row = $subQ->fetch_assoc()) {
 
 // Class-wise Analysis
 $classes = [];
-$classQ = $conn->query("SELECT class, AVG(mark) as avg_mark FROM results $whereClause GROUP BY class");
+$classQ = $conn->query("SELECT CONCAT('Form ', c.class_level, ' - ', c.stream) AS class, c.class_level, AVG(m.marks) AS avg_mark
+                         FROM marks m
+                         JOIN students s ON m.student_id = s.id
+                         JOIN classes c ON s.class_id = c.id
+                         $whereClause
+                         GROUP BY c.id, c.class_level, c.stream
+                         ORDER BY c.class_level, c.stream");
 while ($row = $classQ->fetch_assoc()) {
-    $form = preg_match('/[1-6]/', $row['class'], $match) ? (int)$match[0] : 1;
+    $form = (int)$row['class_level'];
     $gradeData = getGradeAndRemark($form, $row['avg_mark']);
     $classes[] = [
         'class' => $row['class'],
@@ -60,7 +80,7 @@ while ($row = $classQ->fetch_assoc()) {
     ];
 }
 
-$schoolQ = $conn->query("SELECT AVG(mark) as avg_mark FROM results $whereClause");
+$schoolQ = $conn->query("SELECT AVG(m.marks) AS avg_mark FROM marks m $whereClause");
 $schoolAvg = $schoolQ->fetch_assoc()['avg_mark'];
 $overallGrade = getGradeAndRemark(5, $schoolAvg);
 ?>
@@ -120,7 +140,7 @@ $overallGrade = getGradeAndRemark(5, $schoolAvg);
 <table>
     <tr><th>Avg Mark</th><th>Grade</th><th>Remark</th></tr>
     <tr>
-        <td><?= round($schoolAvg, 2) ?></td>
+        <td><?= $schoolAvg !== null ? round($schoolAvg, 2) : '-' ?></td>
         <td><?= $overallGrade[0] ?></td>
         <td><?= $overallGrade[1] ?></td>
     </tr>
