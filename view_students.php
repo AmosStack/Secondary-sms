@@ -44,7 +44,7 @@ $students = [];
 if ($class_ids) {
     $placeholders = implode(',', array_fill(0, count($class_ids), '?'));
     $types = str_repeat('i', count($class_ids));
-    $sql = "SELECT s.*, c.class_level, c.stream FROM students s JOIN classes c ON s.class_id = c.id WHERE s.class_id IN ($placeholders) ORDER BY s.name";
+    $sql = "SELECT s.id, s.name, c.class_level, c.stream FROM students s JOIN classes c ON s.class_id = c.id WHERE s.class_id IN ($placeholders) ORDER BY s.name";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param($types, ...$class_ids);
     $stmt->execute();
@@ -66,6 +66,8 @@ if ($class_ids) {
 </head>
 <body class="bg-light">
 
+<a href="dashboard.php" class="btn btn-secondary position-fixed top-0 end-0 m-3" style="z-index: 1030;">⬅️ Back to Dashboard</a>
+
 <div class="container mt-4">
     <h2>Students in Class <?= htmlspecialchars($class_level ?: 'All') ?></h2>
 
@@ -86,7 +88,6 @@ if ($class_ids) {
             <tr>
                 <th>#</th>
                 <th>Name</th>
-                <th>Gender</th>
                 <th>Class Level</th>
                 <th>Stream</th>
             </tr>
@@ -97,18 +98,16 @@ if ($class_ids) {
                     <tr>
                         <td><?= $i + 1 ?></td>
                         <td><?= htmlspecialchars($student['name']) ?></td>
-                        <td><?= htmlspecialchars($student['gender']) ?></td>
                         <td><?= htmlspecialchars($student['class_level']) ?></td>
                         <td><?= htmlspecialchars($student['stream']) ?></td>
                     </tr>
                 <?php endforeach; ?>
             <?php else: ?>
-                <tr><td colspan="5" class="text-center">No students found.</td></tr>
+                <tr><td colspan="4" class="text-center">No students found.</td></tr>
             <?php endif; ?>
         </tbody>
     </table>
 
-    <a href="dashboard.php" class="btn btn-secondary mt-3">⬅️ Back to Dashboard</a>
 </div>
 
 </body>
