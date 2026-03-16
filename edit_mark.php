@@ -10,11 +10,11 @@ if (!$mark_id) {
 
 // Fetch existing mark and related student/class info
 $stmt = $conn->prepare("
-    SELECT m.marks, s.id AS student_id, s.name AS student_name, c.class_level, c.stream
+    SELECT m.marks, s.student_id, s.name AS student_name, c.class_level, c.stream
     FROM marks m
-    JOIN students s ON m.student_id = s.id
-    JOIN classes c ON s.class_id = c.id
-    WHERE m.id = ?
+    JOIN students s ON m.student_id = s.student_id
+    JOIN classes c ON s.class_id = c.class_id
+    WHERE m.mark_id = ?
 ");
 $stmt->bind_param("i", $mark_id);
 $stmt->execute();
@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = "Please enter a valid mark between 0 and 100.";
     } else {
         // Update mark in DB
-        $stmt = $conn->prepare("UPDATE marks SET marks = ? WHERE id = ?");
+        $stmt = $conn->prepare("UPDATE marks SET marks = ? WHERE mark_id = ?");
         $stmt->bind_param("ii", $new_mark, $mark_id);
         if ($stmt->execute()) {
             $success = "Mark updated successfully.";
