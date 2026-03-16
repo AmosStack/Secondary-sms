@@ -11,7 +11,7 @@
         <?php
         $classes = $conn->query("SELECT * FROM classes");
         while($row = $classes->fetch_assoc()){
-          echo "<option value='{$row['id']}'>{$row['class_name']}</option>";
+          echo "<option value='{$row['class_id']}'>" . htmlspecialchars($row['class_level'] . ' - ' . $row['stream']) . "</option>";
         }
         ?>
       </select>
@@ -49,7 +49,7 @@ $('#class_id').on('change', function() {
     $.post('endpoints/get_stream_subjects.php', { class_id: classId }, function(data) {
       const res = JSON.parse(data);
       $('#stream').html(`<option value="${res.stream}">${res.stream}</option>`);
-      $('#subject').html(res.subjects.map(s => `<option value="${s.id}">${s.subject_name}</option>`));
+      $('#subject').html(res.subjects.map(s => `<option value="${s.subject_id}">${s.name}</option>`));
     });
   }
 });
