@@ -3,8 +3,8 @@
 
 include "includes/db.php";
 
-$class_id = $_GET['class_id'] ?? null;
-$subject_id = $_GET['subject_id'] ?? null;
+$class_id = $_REQUEST['class_id'] ?? null;
+$subject_id = $_REQUEST['subject_id'] ?? null;
 
 if (!$class_id || !$subject_id) {
     echo "<div class='alert alert-danger'>❌ Missing class or subject.</div>";
@@ -28,23 +28,34 @@ while ($row = $result->fetch_assoc()) {
     <title>Enter Marks</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body class="p-4">
+<body class="bg-light">
 
-<h2 class="mb-4">Manual Marks Entry</h2>
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="text-primary">📝 Manual Marks Entry</h3>
+        <a href="dashboard.php" class="btn btn-secondary">⬅️ Back to Dashboard</a>
+    </div>
 
-<form method="POST" action="save_marks.php">
-    <input type="hidden" name="subject_id" value="<?= htmlspecialchars($subject_id) ?>">
+    <div class="card shadow">
+        <div class="card-body">
+            <h5 class="text-primary mb-3">📘 Enter Marks Per Student</h5>
 
-    <?php foreach ($students as $student): ?>
-        <div class="mb-2">
-            <label><?= htmlspecialchars($student['name']) ?></label>
-            <input type="hidden" name="student_ids[]" value="<?= $student['id'] ?>">
-            <input type="number" name="marks[]" class="form-control" required>
+            <form method="POST" action="save_marks.php">
+                <input type="hidden" name="subject_id" value="<?= htmlspecialchars($subject_id) ?>">
+
+                <?php foreach ($students as $student): ?>
+                    <div class="mb-3">
+                        <label class="form-label"><?= htmlspecialchars($student['name']) ?></label>
+                        <input type="hidden" name="student_ids[]" value="<?= $student['id'] ?>">
+                        <input type="number" name="marks[]" class="form-control" required>
+                    </div>
+                <?php endforeach; ?>
+
+                <button type="submit" class="btn btn-primary w-100">💾 Save Marks</button>
+            </form>
         </div>
-    <?php endforeach; ?>
-
-    <button type="submit" class="btn btn-success">Save Marks</button>
-</form>
+    </div>
+</div>
 
 </body>
 </html>
