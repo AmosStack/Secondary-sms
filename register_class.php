@@ -30,19 +30,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Register Class - School System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body {
-            background-color: #f5f6fa;
-        }
-        .card {
-            border-radius: 16px;
-            box-shadow: 0 0 12px rgba(0,0,0,0.08);
-        }
-        h2 {
-            font-weight: 600;
-        }
-        .form-label {
-            font-weight: 500;
-        }
         .subject-box {
             border: 1px solid #ddd;
             border-radius: 12px;
@@ -52,16 +39,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     </style>
 </head>
-<body>
+<body class="bg-light">
 
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-6">
-            <h2 class="mb-4 text-center text-primary">🎓 Register New Class & Stream</h2>
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="text-primary">🎓 Register New Class & Stream</h3>
+        <a href="dashboard.php" class="btn btn-secondary">⬅️ Back to Dashboard</a>
+    </div>
 
-            <?php echo $message; ?>
+    <?php echo $message; ?>
 
-            <div class="card p-4">
+    <div class="card shadow">
+        <div class="card-body">
+            <h5 class="text-primary mb-3">📘 Class Details</h5>
                 <form method="POST" action="">
                     <div class="mb-3">
                         <label for="class_level" class="form-label">Class Level</label>
@@ -103,13 +93,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
 
                     <div class="d-grid mt-4">
-                        <button type="submit" class="btn btn-primary btn-lg">💾 Register Class</button>
+                        <button type="submit" class="btn btn-primary">💾 Register Class</button>
                     </div>
                 </form>
-            </div>
-
-            <div class="text-center mt-4">
-                <a href="dashboard.php" class="btn btn-outline-secondary">⬅️ Back to Dashboard</a>
             </div>
         </div>
     </div>
