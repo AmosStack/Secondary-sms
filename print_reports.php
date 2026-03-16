@@ -34,18 +34,16 @@ $gradeComments = [
 ];
 
 // Get students for dropdown
-$studentsRes = $conn->query("SELECT id, name, class_id FROM students ORDER BY name");
+$studentsRes = $conn->query("SELECT id AS student_id, name, class_id FROM students ORDER BY name");
 
 // Fetch classes to get class level and stream
 $classMap = [];
-$classRes = $conn->query("SELECT id, class_level, stream FROM classes");
+$classRes = $conn->query("SELECT id AS class_id, class_level, stream FROM classes");
 while($c = $classRes->fetch_assoc()) {
-    $classMap[$c['id']] = $c;
+    $classMap[$c['class_id']] = $c;
 }
 
 $selectedStudentId = $_GET['student_id'] ?? null;
-$term = $_GET['term'] ?? '';
-$year = $_GET['year'] ?? '';
 
 $reportData = null;
 
@@ -58,24 +56,13 @@ if ($selectedStudentId) {
     $stmt->fetch();
     $stmt->close();
 
-    // Fetch marks for this student filtered by term and year if provided
+    // Fetch marks for this student
     $marksQuery = "SELECT sub.name AS subject, m.marks 
                    FROM marks m 
                    JOIN subjects sub ON m.subject_id = sub.id
                    WHERE m.student_id = ? ";
     $params = [$selectedStudentId];
     $types = "i";
-
-    if ($term) {
-        $marksQuery .= " AND m.term = ? ";
-        $params[] = $term;
-        $types .= "s";
-    }
-    if ($year) {
-        $marksQuery .= " AND m.year = ? ";
-        $params[] = $year;
-        $types .= "s";
-    }
     $marksQuery .= " ORDER BY sub.name";
 
     $stmt = $conn->prepare($marksQuery);
@@ -156,8 +143,6 @@ if ($selectedStudentId) {
         'studentName' => $studentName,
         'classLevel' => $classLevel,
         'stream' => $stream,
-        'term' => $term,
-        'year' => $year,
         'subjectGrades' => $subjectGrades,
         'totalMarks' => $totalMarks,
         'average' => $average,
@@ -193,18 +178,12 @@ if ($selectedStudentId) {
         <select name="student_id" id="student_id" required>
             <option value="">-- Select Student --</option>
             <?php while ($stu = $studentsRes->fetch_assoc()): 
-                $selected = ($stu['id'] == $selectedStudentId) ? "selected" : "";
+                $selected = ($stu['student_id'] == $selectedStudentId) ? "selected" : "";
                 $cls = $classMap[$stu['class_id']] ?? ['class_level'=>'','stream'=>''];
                 ?>
-                <option value="<?= $stu['id'] ?>" <?= $selected ?>><?= htmlspecialchars($stu['name'] . " (F".$cls['class_level']." - ".$cls['stream'].")") ?></option>
+                <option value="<?= $stu['student_id'] ?>" <?= $selected ?>><?= htmlspecialchars($stu['name'] . " (F".$cls['class_level']." - ".$cls['stream'].")") ?></option>
             <?php endwhile; ?>
         </select><br><br>
-
-        <label for="term">Term (optional):</label>
-        <input type="text" name="term" id="term" value="<?= htmlspecialchars($term) ?>"><br><br>
-
-        <label for="year">Year (optional):</label>
-        <input type="text" name="year" id="year" value="<?= htmlspecialchars($year) ?>"><br><br>
 
         <button type="submit">View Report</button>
     </form>
@@ -216,8 +195,7 @@ if ($selectedStudentId) {
             <h1>School Name / Logo</h1>
             <h2>Student Report Card</h2>
             <p><strong>Student:</strong> <?= htmlspecialchars($reportData['studentName']) ?></p>
-            <p><strong>Class:</strong> F<?= $reportData['classLevel'] ?> - <?= htmlspecialchars($reportData['stream']) ?></p>
-            <p><strong>Term:</strong> <?= htmlspecialchars($reportData['term'] ?: 'N/A') ?> | <strong>Year:</strong> <?= htmlspecialchars($reportData['year'] ?: 'N/A') ?></p>
+            <p><strong>Class:</strong> F<?= htmlspecialchars((string)$reportData['classLevel']) ?> - <?= htmlspecialchars((string)($reportData['stream'] ?? '')) ?></p>
         </div>
 
         <table>
