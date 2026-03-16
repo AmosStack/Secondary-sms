@@ -72,7 +72,7 @@ if ($class_level) {
 // === Fetch subjects for selected class level and stream (only if stream selected) ===
 $subjects = [];
 if ($class_level && $stream_filter !== 'all') {
-    $stmt = $conn->prepare("SELECT DISTINCT sub.id, sub.name FROM subjects sub
+    $stmt = $conn->prepare("SELECT DISTINCT sub.id AS subject_id, sub.name FROM subjects sub
                             JOIN class_subjects cs ON cs.subject_id = sub.id
                             JOIN classes c ON cs.class_id = c.id
                             WHERE c.class_level = ? AND c.stream = ?");
@@ -108,7 +108,7 @@ $students = [];
 if ($class_ids) {
     $placeholders = implode(',', array_fill(0, count($class_ids), '?'));
     $types = str_repeat('i', count($class_ids));
-    $sql = "SELECT id, name FROM students WHERE class_id IN ($placeholders) ORDER BY name";
+    $sql = "SELECT id AS student_id, name FROM students WHERE class_id IN ($placeholders) ORDER BY name";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param($types, ...$class_ids);
     $stmt->execute();
@@ -122,8 +122,8 @@ if ($class_ids) {
 // === Fetch marks for these students and subjects ===
 $marks_data = [];
 if ($students && $subjects) {
-    $student_ids = array_column($students, 'id');
-    $subject_ids = array_column($subjects, 'id');
+    $student_ids = array_column($students, 'student_id');
+    $subject_ids = array_column($subjects, 'subject_id');
 
     $student_placeholders = implode(',', array_fill(0, count($student_ids), '?'));
     $subject_placeholders = implode(',', array_fill(0, count($subject_ids), '?'));
@@ -152,6 +152,8 @@ if ($students && $subjects) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
 </head>
 <body class="bg-light">
+
+<a href="dashboard.php" class="btn btn-secondary position-fixed top-0 end-0 m-3" style="z-index: 1030;">⬅️ Back to Dashboard</a>
 
 <div class="container mt-4">
     <h2>Marks - Class <?= htmlspecialchars($class_level ?: 'All') ?> Stream <?= htmlspecialchars($stream_filter) ?></h2>
@@ -203,7 +205,7 @@ if ($students && $subjects) {
                                 $subjectCount = 0;
                                 $totalPoints = 0;
                                 foreach ($subjects as $subject) {
-                                    $markEntry = $marks_data[$student['id']][$subject['id']] ?? null;
+                                    $markEntry = $marks_data[$student['student_id']][$subject['subject_id']] ?? null;
                                     $mark = $markEntry['marks'] ?? '';
                                     $mark_id = $markEntry['mark_id'] ?? null;
 
@@ -263,7 +265,6 @@ if ($students && $subjects) {
         </div>
     <?php endif; ?>
 
-    <a href="dashboard.php" class="btn btn-secondary mt-3">⬅️ Back to Dashboard</a>
 </div>
 
 </body>
