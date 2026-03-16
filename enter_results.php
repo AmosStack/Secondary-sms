@@ -59,14 +59,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             if ($student = $result->fetch_assoc()) {
                 $student_id = $student['id'];
 
-                // Insert mark
-                $insert = $conn->prepare("INSERT INTO marks (student_id, subject_id, marks, date_recorded) VALUES (?, ?, ?, NOW())");
+                // Insert or update mark due to unique(student_id, subject_id)
+                $insert = $conn->prepare("INSERT INTO marks (student_id, subject_id, marks, date_recorded) VALUES (?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE marks = VALUES(marks), date_recorded = NOW()");
                 $insert->bind_param("iii", $student_id, $subject_id, $marks);
                 if ($insert->execute()) $inserted++;
             }
         }
 
-        echo "<script>alert('✅ $inserted marks uploaded successfully.'); window.location.href='enter_marks.php';</script>";
+        echo "<script>alert('✅ $inserted marks uploaded successfully.'); window.location.href='enter_results.php';</script>";
         exit;
     } catch (Exception $e) {
         echo "<script>alert('❌ Upload failed: " . $e->getMessage() . "'); history.back();</script>";
@@ -82,7 +82,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Enter Marks</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
 </head>
 <body>
 
@@ -98,7 +98,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
               <!-- Left Column: Manual Entry -->
               <div class="col-md-6 border-end">
                   <h5 class="text-primary">📘 Manual Entry</h5>
-                  <form method="POST" action="enter_marks_manual.php">
+                  <form method="GET" action="enter_marks_manual.php">
                       <!-- Class Level Dropdown -->
                       <div class="mb-3">
                           <label for="class_manual" class="form-label">Select Class Level:</label>
@@ -187,41 +187,36 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 <!-- AJAX Script -->
 <script>
-$(document).ready(function () {
-    function loadStreams(level, streamSelectId, subjectSelectId) {
-        if (!level) return;
-
-        $.get('get_streams_by_level.php', { level: level }, function (data) {
-            $('#' + streamSelectId).html(data);
-            $('#' + subjectSelectId).html('<option value="">--Select Subject--</option>');
+function loadStreams(level, streamSelectId, subjectSelectId) {
+    if (!level) return;
+    fetch('get_streams_by_level.php?level=' + encodeURIComponent(level))
+        .then(r => r.text())
+        .then(data => {
+            document.getElementById(streamSelectId).innerHTML = data;
+            document.getElementById(subjectSelectId).innerHTML = '<option value="">--Select Subject--</option>';
         });
-    }
+}
 
-    function loadSubjects(classId, subjectSelectId) {
-        if (!classId) return;
-
-        $.get('get_subjects.php', { class_id: classId }, function (data) {
-            $('#' + subjectSelectId).html(data);
+function loadSubjects(classId, subjectSelectId) {
+    if (!classId) return;
+    fetch('get_subjects.php?class_id=' + encodeURIComponent(classId))
+        .then(r => r.text())
+        .then(data => {
+            document.getElementById(subjectSelectId).innerHTML = data;
         });
-    }
+}
 
-    // Manual
-    $('#class_manual').change(function () {
-        loadStreams(this.value, 'stream_manual', 'subject_id_manual');
-    });
-
-    $('#stream_manual').change(function () {
-        loadSubjects(this.value, 'subject_id_manual');
-    });
-
-    // Upload
-    $('#class_upload').change(function () {
-        loadStreams(this.value, 'stream_upload', 'subject_id_upload');
-    });
-
-    $('#stream_upload').change(function () {
-        loadSubjects(this.value, 'subject_id_upload');
-    });
+document.getElementById('class_manual').addEventListener('change', function () {
+    loadStreams(this.value, 'stream_manual', 'subject_id_manual');
+});
+document.getElementById('stream_manual').addEventListener('change', function () {
+    loadSubjects(this.value, 'subject_id_manual');
+});
+document.getElementById('class_upload').addEventListener('change', function () {
+    loadStreams(this.value, 'stream_upload', 'subject_id_upload');
+});
+document.getElementById('stream_upload').addEventListener('change', function () {
+    loadSubjects(this.value, 'subject_id_upload');
 });
 </script>
 
