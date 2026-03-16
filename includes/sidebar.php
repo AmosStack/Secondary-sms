@@ -15,14 +15,14 @@ if (!isset($_SESSION['admin_id'])) {
             <a href="#"><img src="img/avatar.png" alt="Admin" class="img-fluid rounded-circle" width="80" /></a>
             <?php
             $admin_id = $_SESSION['admin_id'];
-            $stmt = $conn->prepare("SELECT name, email FROM admins WHERE id = ?");
+            $stmt = $conn->prepare("SELECT username, email FROM admin WHERE admin_id = ?");
             $stmt->bind_param("i", $admin_id);
             $stmt->execute();
-            $stmt->bind_result($name, $email);
+            $stmt->bind_result($username, $email);
             if ($stmt->fetch()):
             ?>
-                <h4 class="mt-2"><?php echo htmlspecialchars($name); ?></h4>
-                <small class="text-muted"><?php echo htmlspecialchars($email); ?></small>
+                <h4 class="mt-2"><?php echo htmlspecialchars($username); ?></h4>
+                <small class="text-muted"><?php echo htmlspecialchars((string)$email); ?></small>
             <?php endif; $stmt->close(); ?>
         </div>
 
@@ -33,19 +33,19 @@ if (!isset($_SESSION['admin_id'])) {
                 </li>
 
                 <li class="nav-item">
-                    <a href="students.php"><i class="fa fa-user-graduate"></i> <span class="mini-dn">Manage Students</span></a>
+                    <a href="register_student.php"><i class="fa fa-user-graduate"></i> <span class="mini-dn">Manage Students</span></a>
                 </li>
 
                 <li class="nav-item">
-                    <a href="classes.php"><i class="fa fa-layer-group"></i> <span class="mini-dn">Manage Classes</span></a>
+                    <a href="register_class.php"><i class="fa fa-layer-group"></i> <span class="mini-dn">Manage Classes</span></a>
                 </li>
 
                 <li class="nav-item">
-                    <a href="enter_marks.php"><i class="fa fa-pen-nib"></i> <span class="mini-dn">Enter Marks</span></a>
+                    <a href="enter_results.php"><i class="fa fa-pen-nib"></i> <span class="mini-dn">Enter Marks</span></a>
                 </li>
 
                 <li class="nav-item">
-                    <a href="view_reports.php"><i class="fa fa-file-alt"></i> <span class="mini-dn">Reports</span></a>
+                    <a href="print_reports.php"><i class="fa fa-file-alt"></i> <span class="mini-dn">Reports</span></a>
                 </li>
 
                 <li class="nav-item">
