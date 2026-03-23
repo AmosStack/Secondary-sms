@@ -1,6 +1,7 @@
 <?php
 include "includes/db.php"; // Database connection
 
+
 // Grade and remark logic
 function getGradeAndRemark($form, $mark) {
     if ($mark === null) return ['-', '-'];
@@ -42,9 +43,9 @@ $whereClause = $conditions ? ("WHERE " . implode(" AND ", $conditions)) : "";
 $subjects = [];
 $subQ = $conn->query("SELECT sub.name AS subject, AVG(m.marks) AS avg_mark, COUNT(DISTINCT m.student_id) AS total
                        FROM marks m
-                       JOIN subjects sub ON m.subject_id = sub.id
+                       JOIN subjects sub ON m.subject_id = sub.subject_id
                        $whereClause
-                       GROUP BY sub.id, sub.name
+                       GROUP BY sub.subject_id, sub.name
                        ORDER BY sub.name");
 while ($row = $subQ->fetch_assoc()) {
     $form = 5;
@@ -63,10 +64,10 @@ while ($row = $subQ->fetch_assoc()) {
 $classes = [];
 $classQ = $conn->query("SELECT CONCAT('Form ', c.class_level, ' - ', c.stream) AS class, c.class_level, AVG(m.marks) AS avg_mark
                          FROM marks m
-                         JOIN students s ON m.student_id = s.id
-                         JOIN classes c ON s.class_id = c.id
+                         JOIN students s ON m.student_id = s.student_id
+                         JOIN classes c ON s.class_id = c.class_id
                          $whereClause
-                         GROUP BY c.id, c.class_level, c.stream
+                         GROUP BY c.class_id, c.class_level, c.stream
                          ORDER BY c.class_level, c.stream");
 while ($row = $classQ->fetch_assoc()) {
     $form = (int)$row['class_level'];
