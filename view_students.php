@@ -25,16 +25,16 @@ $stream_filter = $_GET['stream'] ?? 'all';
 $class_ids = [];
 if ($class_level) {
     if ($stream_filter == 'all') {
-        $stmt = $conn->prepare("SELECT id FROM classes WHERE class_level = ?");
+        $stmt = $conn->prepare("SELECT class_id FROM classes WHERE class_level = ?");
         $stmt->bind_param("s", $class_level);
     } else {
-        $stmt = $conn->prepare("SELECT id FROM classes WHERE class_level = ? AND stream = ?");
+        $stmt = $conn->prepare("SELECT class_id FROM classes WHERE class_level = ? AND stream = ?");
         $stmt->bind_param("ss", $class_level, $stream_filter);
     }
     $stmt->execute();
     $result = $stmt->get_result();
     while ($row = $result->fetch_assoc()) {
-        $class_ids[] = $row['id'];
+        $class_ids[] = $row['class_id'];
     }
     $stmt->close();
 }
@@ -44,7 +44,7 @@ $students = [];
 if ($class_ids) {
     $placeholders = implode(',', array_fill(0, count($class_ids), '?'));
     $types = str_repeat('i', count($class_ids));
-    $sql = "SELECT s.id, s.name, c.class_level, c.stream FROM students s JOIN classes c ON s.class_id = c.id WHERE s.class_id IN ($placeholders) ORDER BY s.name";
+    $sql = "SELECT s.student_id, s.name, c.class_level, c.stream FROM students s JOIN classes c ON s.class_id = c.class_id WHERE s.class_id IN ($placeholders) ORDER BY s.name";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param($types, ...$class_ids);
     $stmt->execute();
