@@ -34,11 +34,11 @@ $gradeComments = [
 ];
 
 // Get students for dropdown
-$studentsRes = $conn->query("SELECT id AS student_id, name, class_id FROM students ORDER BY name");
+$studentsRes = $conn->query("SELECT student_id AS student_id, name, class_id FROM students ORDER BY name");
 
 // Fetch classes to get class level and stream
 $classMap = [];
-$classRes = $conn->query("SELECT id AS class_id, class_level, stream FROM classes");
+$classRes = $conn->query("SELECT class_id AS class_id, class_level, stream FROM classes");
 while($c = $classRes->fetch_assoc()) {
     $classMap[$c['class_id']] = $c;
 }
@@ -49,7 +49,7 @@ $reportData = null;
 
 if ($selectedStudentId) {
     // Fetch student info
-    $stmt = $conn->prepare("SELECT s.name, c.class_level, c.stream FROM students s JOIN classes c ON s.class_id = c.id WHERE s.id=?");
+    $stmt = $conn->prepare("SELECT s.name, c.class_level, c.stream FROM students s JOIN classes c ON s.class_id = c.class_id WHERE s.student_id=?");
     $stmt->bind_param("i", $selectedStudentId);
     $stmt->execute();
     $stmt->bind_result($studentName, $classLevel, $stream);
@@ -59,7 +59,7 @@ if ($selectedStudentId) {
     // Fetch marks for this student
     $marksQuery = "SELECT sub.name AS subject, m.marks 
                    FROM marks m 
-                   JOIN subjects sub ON m.subject_id = sub.id
+                   JOIN subjects sub ON m.subject_id = sub.subject_id
                    WHERE m.student_id = ? ";
     $params = [$selectedStudentId];
     $types = "i";
