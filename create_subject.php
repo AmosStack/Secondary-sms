@@ -1,6 +1,7 @@
 <?php
 include 'includes/db.php';
 
+
 $alert = "";
 $edit_id = null;
 $edit_name = '';
@@ -8,7 +9,7 @@ $edit_name = '';
 // Handle edit load
 if (isset($_GET['edit'])) {
     $edit_id = intval($_GET['edit']);
-    $stmt = $conn->prepare("SELECT name FROM subjects WHERE id = ?");
+    $stmt = $conn->prepare("SELECT name FROM subjects WHERE subject_id = ?");
     $stmt->bind_param("i", $edit_id);
     $stmt->execute();
     $res = $stmt->get_result();
@@ -25,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['edit_id'])) {
     $edit_id = intval($_POST['edit_id']);
     $name = trim($_POST['name']);
     if (!empty($name)) {
-        $stmt = $conn->prepare("UPDATE subjects SET name = ? WHERE id = ?");
+        $stmt = $conn->prepare("UPDATE subjects SET name = ? WHERE subject_id = ?");
         $stmt->bind_param("si", $name, $edit_id);
         if ($stmt->execute()) {
             $alert = '<div class="alert alert-success">✅ Subject updated successfully!</div>';
@@ -44,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['name']) && !isset($_PO
 
     if (!empty($name)) {
         // Check if subject already exists
-        $stmt = $conn->prepare("SELECT id FROM subjects WHERE name = ?");
+        $stmt = $conn->prepare("SELECT subject_id FROM subjects WHERE name = ?");
         $stmt->bind_param("s", $name);
         $stmt->execute();
         $stmt->store_result();
@@ -138,8 +139,8 @@ $subjects = $conn->query("SELECT * FROM subjects");
                 <td><?= $i++ ?></td>
                 <td><?= htmlspecialchars($row['name']) ?></td>
                 <td>
-                  <a href="create_subject.php?edit=<?= $row['id'] ?>" class="btn btn-sm btn-primary">✏️ Edit</a>
-                  <a href="create_subject.php?delete=<?= $row['id'] ?>" 
+                  <a href="create_subject.php?edit=<?= $row['subject_id'] ?>" class="btn btn-sm btn-primary">✏️ Edit</a>
+                  <a href="create_subject.php?delete=<?= $row['subject_id'] ?>" 
                      onclick="return confirm('Are you sure you want to delete this subject?')" 
                      class="btn btn-sm btn-danger">🗑️ Delete</a>
                 </td>
