@@ -70,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register_manual'])) {
     $stream = $_POST['stream'];
 
     if (!empty($name) && !empty($class_level) && !empty($stream)) {
-        $stmt = $conn->prepare("SELECT id FROM classes WHERE class_level = ? AND stream = ?");
+        $stmt = $conn->prepare("SELECT class_id FROM classes WHERE class_level = ? AND stream = ?");
         $stmt->bind_param("ss", $class_level, $stream);
         $stmt->execute();
         $stmt->bind_result($class_id);
