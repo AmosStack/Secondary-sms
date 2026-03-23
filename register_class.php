@@ -80,8 +80,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 echo "
                                 <div class='col-md-6'>
                                     <div class='form-check subject-box'>
-                                        <input class='form-check-input' type='checkbox' name='subjects[]' value='{$row['id']}' id='subject_{$row['id']}'>
-                                        <label class='form-check-label' for='subject_{$row['id']}'>
+                                        <input class='form-check-input' type='checkbox' name='subjects[]' value='{$row['subject_id']}' id='subject_{$row['subject_id']}'>
+                                        <label class='form-check-label' for='subject_{$row['subject_id']}'>
                                             {$row['name']}
                                         </label>
                                     </div>
