@@ -49,7 +49,7 @@ function getDivision($form, $subjectAverages) {
     ];
 
     if ($form < 1 || $form > 6 || !is_array($subjectAverages) || count($subjectAverages) === 0) {
-        return "Invalid input";
+        return "Invalid class";
     }
 
     $subjectGrades = [];
