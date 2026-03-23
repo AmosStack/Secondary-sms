@@ -72,9 +72,9 @@ if ($class_level) {
 // === Fetch subjects for selected class level and stream (only if stream selected) ===
 $subjects = [];
 if ($class_level && $stream_filter !== 'all') {
-    $stmt = $conn->prepare("SELECT DISTINCT sub.id AS subject_id, sub.name FROM subjects sub
-                            JOIN class_subjects cs ON cs.subject_id = sub.id
-                            JOIN classes c ON cs.class_id = c.id
+    $stmt = $conn->prepare("SELECT DISTINCT sub.subject_id AS subject_id, sub.name FROM subjects sub
+                            JOIN class_subjects cs ON cs.subject_id = sub.subject_id
+                            JOIN classes c ON cs.class_id = c.class_id
                             WHERE c.class_level = ? AND c.stream = ?");
     $stmt->bind_param("ss", $class_level, $stream_filter);
     $stmt->execute();
@@ -89,16 +89,16 @@ if ($class_level && $stream_filter !== 'all') {
 $class_ids = [];
 if ($class_level) {
     if ($stream_filter === 'all') {
-        $stmt = $conn->prepare("SELECT id FROM classes WHERE class_level = ?");
+        $stmt = $conn->prepare("SELECT class_id FROM classes WHERE class_level = ?");
         $stmt->bind_param("s", $class_level);
     } else {
-        $stmt = $conn->prepare("SELECT id FROM classes WHERE class_level = ? AND stream = ?");
+        $stmt = $conn->prepare("SELECT class_id FROM classes WHERE class_level = ? AND stream = ?");
         $stmt->bind_param("ss", $class_level, $stream_filter);
     }
     $stmt->execute();
     $res = $stmt->get_result();
     while ($row = $res->fetch_assoc()) {
-        $class_ids[] = $row['id'];
+        $class_ids[] = $row['class_id'];
     }
     $stmt->close();
 }
@@ -108,7 +108,7 @@ $students = [];
 if ($class_ids) {
     $placeholders = implode(',', array_fill(0, count($class_ids), '?'));
     $types = str_repeat('i', count($class_ids));
-    $sql = "SELECT id AS student_id, name FROM students WHERE class_id IN ($placeholders) ORDER BY name";
+    $sql = "SELECT student_id AS student_id, name FROM students WHERE class_id IN ($placeholders) ORDER BY name";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param($types, ...$class_ids);
     $stmt->execute();
@@ -130,7 +130,7 @@ if ($students && $subjects) {
 
     $types = str_repeat('i', count($student_ids) + count($subject_ids));
 
-    $sql = "SELECT m.student_id, m.subject_id, m.marks, m.id AS mark_id FROM marks m
+    $sql = "SELECT m.student_id, m.subject_id, m.marks, m.mark_id AS mark_id FROM marks m
             WHERE m.student_id IN ($student_placeholders) AND m.subject_id IN ($subject_placeholders)";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param($types, ...$student_ids, ...$subject_ids);
