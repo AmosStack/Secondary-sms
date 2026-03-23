@@ -65,12 +65,12 @@ function getDivisionAndPoints($totalPoints, $classLevel) {
 // Fetch all classes matching selected class level (all streams combined)
 $classIds = [];
 if ($selectedClass) {
-    $stmt = $conn->prepare("SELECT id FROM classes WHERE class_level = ?");
+    $stmt = $conn->prepare("SELECT class_id FROM classes WHERE class_level = ?");
     $stmt->bind_param("s", $selectedClass);
     $stmt->execute();
     $result = $stmt->get_result();
     while ($row = $result->fetch_assoc()) {
-        $classIds[] = $row['id'];
+        $classIds[] = $row['class_id'];
     }
     $stmt->close();
 }
@@ -80,7 +80,7 @@ $students = [];
 if ($classIds) {
     $placeholders = implode(',', array_fill(0, count($classIds), '?'));
     $types = str_repeat('i', count($classIds));
-    $sql = "SELECT s.id, s.name, c.stream, c.class_level FROM students s JOIN classes c ON s.class_id = c.id WHERE s.class_id IN ($placeholders) ORDER BY s.name";
+    $sql = "SELECT s.student_id, s.name, c.stream, c.class_level FROM students s JOIN classes c ON s.class_id = c.class_id WHERE s.class_id IN ($placeholders) ORDER BY s.name";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param($types, ...$classIds);
     $stmt->execute();
@@ -96,17 +96,17 @@ $subjectIds = [];
 $subjectNames = [];
 if ($selectedClass) {
     // Join class_subjects and classes by class_level
-    $sql = "SELECT DISTINCT sub.id, sub.name FROM subjects sub 
-            JOIN class_subjects cs ON cs.subject_id = sub.id
-            JOIN classes c ON cs.class_id = c.id
+    $sql = "SELECT DISTINCT sub.subject_id, sub.name FROM subjects sub 
+            JOIN class_subjects cs ON cs.subject_id = sub.subject_id
+            JOIN classes c ON cs.class_id = c.class_id
             WHERE c.class_level = ?";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("s", $selectedClass);
     $stmt->execute();
     $result = $stmt->get_result();
     while ($row = $result->fetch_assoc()) {
-        $subjectIds[] = $row['id'];
-        $subjectNames[$row['id']] = $row['name'];
+        $subjectIds[] = $row['subject_id'];
+        $subjectNames[$row['subject_id']] = $row['name'];
     }
     $stmt->close();
 }
