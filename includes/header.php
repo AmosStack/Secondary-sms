@@ -12,10 +12,20 @@ $admin = null;
 
 if (isset($conn)) {
     try {
-        $notificationQuery = $conn->prepare('SELECT ApplicationID, Dateofapply FROM applications WHERE Status IS NULL OR Status = ""');
-        $notificationQuery->execute();
-        $notifications = $notificationQuery->fetchAll();
-        $totneworder = count($notifications);
+        if ($conn instanceof PDO) {
+            $notificationQuery = $conn->prepare('SELECT ApplicationID, Dateofapply FROM applications WHERE Status IS NULL OR Status = ""');
+            $notificationQuery->execute();
+            $notifications = $notificationQuery->fetchAll();
+            $totneworder = count($notifications);
+        } elseif ($conn instanceof mysqli) {
+            $notificationQuery = $conn->query('SELECT ApplicationID, Dateofapply FROM applications WHERE Status IS NULL OR Status = ""');
+            if ($notificationQuery instanceof mysqli_result) {
+                while ($row = $notificationQuery->fetch_assoc()) {
+                    $notifications[] = $row;
+                }
+                $totneworder = count($notifications);
+            }
+        }
     } catch (Exception $e) {
         error_log("Notification query error: " . $e->getMessage());
     }
@@ -23,9 +33,23 @@ if (isset($conn)) {
     // Get admin info from session if available
     if (isset($_SESSION['admin_id'])) {
         try {
-            $adminQuery = $conn->prepare('SELECT id, name, email FROM users WHERE id = ? LIMIT 1');
-            $adminQuery->execute([$_SESSION['admin_id']]);
-            $admin = $adminQuery->fetch(PDO::FETCH_ASSOC);
+            if ($conn instanceof PDO) {
+                $adminQuery = $conn->prepare('SELECT id, name, email FROM users WHERE id = ? LIMIT 1');
+                $adminQuery->execute([$_SESSION['admin_id']]);
+                $admin = $adminQuery->fetch(PDO::FETCH_ASSOC);
+            } elseif ($conn instanceof mysqli) {
+                $adminId = (int)$_SESSION['admin_id'];
+                $adminQuery = $conn->prepare('SELECT id, name, email FROM users WHERE id = ? LIMIT 1');
+                if ($adminQuery) {
+                    $adminQuery->bind_param('i', $adminId);
+                    $adminQuery->execute();
+                    $adminResult = $adminQuery->get_result();
+                    if ($adminResult instanceof mysqli_result) {
+                        $admin = $adminResult->fetch_assoc();
+                    }
+                    $adminQuery->close();
+                }
+            }
         } catch (Exception $e) {
             error_log("Admin query error: " . $e->getMessage());
         }
