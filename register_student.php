@@ -108,31 +108,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excel_file'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register_manual'])) {
     $name = trim($_POST['name']);
     $gender = trim($_POST['gender'] ?? '');
-    $class_level = $_POST['class_level'];
-    $stream = $_POST['stream'];
+    $class_id = (int)($_POST['class_id'] ?? 0);
 
-    if (!empty($name) && !empty($class_level) && !empty($stream) && (!$hasGender || !empty($gender))) {
-        $stmt = $conn->prepare("SELECT class_id FROM classes WHERE class_level = ? AND stream = ?");
-        $stmt->bind_param("ss", $class_level, $stream);
-        $stmt->execute();
-        $stmt->bind_result($class_id);
-
-        if ($stmt->fetch()) {
-            $stmt->close();
-            if ($hasGender) {
-                $stmt = $conn->prepare("INSERT INTO students ({$nameColumn}, gender, class_id) VALUES (?, ?, ?)");
-                $stmt->bind_param("ssi", $name, $gender, $class_id);
-            } else {
-                $stmt = $conn->prepare("INSERT INTO students ({$nameColumn}, class_id) VALUES (?, ?)");
-                $stmt->bind_param("si", $name, $class_id);
-            }
-            if ($stmt->execute()) {
-                $msg .= '<div class="alert alert-success">✅ Student registered successfully!</div>';
-            } else {
-                $msg .= '<div class="alert alert-danger">❌ Failed to register student.</div>';
-            }
+    if (!empty($name) && $class_id > 0 && (!$hasGender || !empty($gender))) {
+        if ($hasGender) {
+            $stmt = $conn->prepare("INSERT INTO students ({$nameColumn}, gender, class_id) VALUES (?, ?, ?)");
+            $stmt->bind_param("ssi", $name, $gender, $class_id);
         } else {
-            $msg .= '<div class="alert alert-danger">❌ Class and stream combination not found.</div>';
+            $stmt = $conn->prepare("INSERT INTO students ({$nameColumn}, class_id) VALUES (?, ?)");
+            $stmt->bind_param("si", $name, $class_id);
+        }
+        if ($stmt->execute()) {
+            $msg .= '<div class="alert alert-success">✅ Student registered successfully!</div>';
+        } else {
+            $msg .= '<div class="alert alert-danger">❌ Failed to register student.</div>';
         }
         $stmt->close();
     } else {
@@ -140,8 +129,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register_manual'])) {
     }
 }
 
-// Fetch distinct class levels
-$levels = $conn->query("SELECT DISTINCT class_level FROM classes ORDER BY class_level");
+// Fetch all classes for manual registration dropdown
+$classes = $conn->query("SELECT class_id, class_level, stream FROM classes ORDER BY class_level, stream");
 ?>
 
 <!DOCTYPE html>
@@ -183,20 +172,15 @@ $levels = $conn->query("SELECT DISTINCT class_level FROM classes ORDER BY class_
                             </select>
                         </div>
 
-                        <div class="col-md-6">
-                            <label class="form-label">Select Class Level:</label>
-                            <select name="class_level" id="class_level" class="form-select" required>
-                                <option value="">--Select Level--</option>
-                                <?php while ($row = $levels->fetch_assoc()): ?>
-                                    <option value="<?= $row['class_level'] ?>"><?= $row['class_level'] ?></option>
+                        <div class="col-md-12">
+                            <label class="form-label">Select Class:</label>
+                            <select name="class_id" class="form-select" required>
+                                <option value="">--Select Class--</option>
+                                <?php while ($row = $classes->fetch_assoc()): ?>
+                                    <option value="<?= (int)$row['class_id'] ?>">
+                                        Form <?= htmlspecialchars($row['class_level']) ?> - <?= htmlspecialchars($row['stream']) ?>
+                                    </option>
                                 <?php endwhile; ?>
-                            </select>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label">Select Stream:</label>
-                            <select name="stream" id="stream" class="form-select" required>
-                                <option value="">--Select Stream--</option>
                             </select>
                         </div>
 
@@ -225,34 +209,6 @@ $levels = $conn->query("SELECT DISTINCT class_level FROM classes ORDER BY class_
         </div>
     </div>
 </div>
-
-
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    var classLevelSelect = document.getElementById('class_level');
-    var streamSelect = document.getElementById('stream');
-
-    classLevelSelect.addEventListener('change', function () {
-        var classLevel = this.value;
-
-        if (!classLevel) {
-            streamSelect.innerHTML = '<option value="">--Select Stream--</option>';
-            return;
-        }
-
-        fetch('get_streams.php?class_level=' + encodeURIComponent(classLevel), {
-            method: 'GET'
-        })
-            .then(function (response) { return response.text(); })
-            .then(function (html) {
-                streamSelect.innerHTML = html;
-            })
-            .catch(function () {
-                streamSelect.innerHTML = '<option value="">--Select Stream--</option>';
-            });
-    });
-});
-</script>
 
 </body>
 </html>
