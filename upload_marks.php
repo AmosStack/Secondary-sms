@@ -74,7 +74,7 @@ try {
         if ($studentName === "" || $marks === "") continue;
 
         // Find student by name and class
-        $stmt = $conn->prepare("SELECT student_id FROM students WHERE name = ? AND class_id = ?");
+        $stmt = $conn->prepare("SELECT student_id FROM students WHERE full_name = ? AND class_id = ?");
         $stmt->bind_param("si", $studentName, $class_id);
         $stmt->execute();
         $result = $stmt->get_result();
