@@ -1,5 +1,6 @@
 <?php
 include 'includes/db.php';
+require_once 'endpoints/division_calculation.php';
 
 // Get all distinct class levels from database
 $classLevels = [];
@@ -15,52 +16,6 @@ $selectedClass = htmlspecialchars($selectedClass);
 // Filter and sort options
 $filter = $_GET['filter'] ?? 'all';      // all, top10, bottom10
 $sortBy = $_GET['sort'] ?? 'average';   // average_asc, average_desc
-
-// Helper functions for grades and divisions for F1-4 and F5-6
-
-function getGradeAndPoint($avg, $classLevel) {
-    if ($classLevel <= 4) {
-        if ($avg >= 75) return ['A', 1];
-        if ($avg >= 65) return ['B', 2];
-        if ($avg >= 55) return ['C', 3];
-        if ($avg >= 35) return ['D', 4];
-        return ['F', 5];
-    } else {
-        if ($avg >= 80) return ['A', 1];
-        if ($avg >= 70) return ['B', 2];
-        if ($avg >= 60) return ['C', 3];
-        if ($avg >= 50) return ['D', 4];
-        if ($avg >= 40) return ['E', 5];
-        if ($avg >= 35) return ['S', 6];
-        return ['F', 7];
-    }
-}
-
-function getDivisionAndPoints($totalPoints, $classLevel) {
-    if ($classLevel <= 4) {
-        $divisions = [
-            "Div 1" => [7, 17],
-            "Div 2" => [18, 21],
-            "Div 3" => [22, 25],
-            "Div 4" => [26, 33],
-            "Div 0" => [34, 35],
-        ];
-    } else {
-        $divisions = [
-            "Div 1" => [3, 9],
-            "Div 2" => [10, 12],
-            "Div 3" => [13, 17],
-            "Div 4" => [18, 19],
-            "Div 0" => [20, 21],
-        ];
-    }
-    foreach ($divisions as $div => [$min, $max]) {
-        if ($totalPoints >= $min && $totalPoints <= $max) {
-            return $div;
-        }
-    }
-    return "No Division";
-}
 
 // Fetch all classes matching selected class level (all streams combined)
 $classIds = [];
@@ -80,7 +35,7 @@ $students = [];
 if ($classIds) {
     $placeholders = implode(',', array_fill(0, count($classIds), '?'));
     $types = str_repeat('i', count($classIds));
-    $sql = "SELECT s.student_id, s.name, c.stream, c.class_level FROM students s JOIN classes c ON s.class_id = c.class_id WHERE s.class_id IN ($placeholders) ORDER BY s.name";
+    $sql = "SELECT s.student_id, s.full_name, c.stream, c.class_level FROM students s JOIN classes c ON s.class_id = c.class_id WHERE s.class_id IN ($placeholders) ORDER BY s.full_name";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param($types, ...$classIds);
     $stmt->execute();
@@ -145,32 +100,31 @@ $performance = [];
 foreach ($students as $student) {
     $total = 0;
     $count = 0;
-    $points = 0;
-    $subjectPointsList = [];
+    $subjectAverages = [];
+    $form = $student['class_level'];
 
     foreach ($subjectIds as $subjId) {
         $mark = $marksData[$student['student_id']][$subjId] ?? null;
         if ($mark !== null && $mark !== '') {
             $total += $mark;
             $count++;
-
-            list($grade, $point) = getGradeAndPoint($mark, $student['class_level']);
-            $points += $point;
-            $subjectPointsList[] = $point;
+            $subjectName = $subjectNames[$subjId] ?? ('Subject ' . $subjId);
+            $subjectAverages[$subjectName] = (float)$mark;
         }
     }
     $average = $count ? round($total / $count, 2) : 0;
 
-    list($overallGrade, $overallPoint) = getGradeAndPoint($average, $student['class_level']);
-
-    // GPA: average of points per subject (if any)
-    $gpa = $count ? round(array_sum($subjectPointsList) / $count, 2) : 0;
-
-    $division = getDivisionAndPoints($points, $student['class_level']);
+    $overallGrade = getGradeByForm($form, $average);
+    $divisionResult = calculateDivisionResult($form, $subjectAverages);
+    $points = $divisionResult['valid'] ? $divisionResult['total_points'] : 0;
+    $division = $divisionResult['division'];
+    $gpa = count($divisionResult['used_points'])
+        ? round(array_sum($divisionResult['used_points']) / count($divisionResult['used_points']), 2)
+        : 0;
 
     $performance[] = [
         'id' => $student['student_id'],
-        'name' => $student['name'],
+        'full_name' => $student['full_name'],
         'stream' => $student['stream'],
         'class_level' => $student['class_level'],
         'marks' => array_map(function($subjId) use ($marksData, $student) {
@@ -301,7 +255,7 @@ if ($filter === 'top10') {
             <?php if ($performance): foreach ($performance as $i => $p): ?>
                 <tr>
                     <td><?= $i + 1 ?></td>
-                    <td><?= htmlspecialchars($p['name']) ?></td>
+                    <td><?= htmlspecialchars($p['full_name']) ?></td>
                     <td><?= htmlspecialchars($p['stream']) ?></td>
                     <?php foreach ($subjectIds as $subjId): 
                         $mark = $marksData[$p['id']][$subjId] ?? '-';
