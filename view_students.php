@@ -10,19 +10,14 @@ while ($row = $res->fetch_assoc()) {
 $class_level = $_GET['class_level'] ?? '';
 $stream_filter = $_GET['stream'] ?? 'all';
 
-$hasFullName = false;
 $hasGender = false;
-$check = $conn->query("SHOW COLUMNS FROM students LIKE 'full_name'");
-if ($check && $check->num_rows > 0) {
-    $hasFullName = true;
-}
 $check = $conn->query("SHOW COLUMNS FROM students LIKE 'gender'");
 if ($check && $check->num_rows > 0) {
     $hasGender = true;
 }
 
-$nameColumn = $hasFullName ? 's.full_name' : 's.name';
-$nameAlias = $hasFullName ? 'full_name' : 'name';
+$nameColumn = 's.full_name';
+$nameAlias = 'full_name';
 $genderColumn = $hasGender ? ', s.gender' : '';
 
 $streams = [];
@@ -92,9 +87,9 @@ if ($class_ids) {
         <a href="register_student.php" class="btn btn-primary btn-sm">Add Student</a>
     </div>
 
-    <?php if (!$hasFullName || !$hasGender): ?>
+    <?php if (!$hasGender): ?>
         <div class="alert alert-warning">
-            Recommended: add <strong>full_name</strong> and <strong>gender</strong> columns in students table for complete profile data.
+            Recommended: add <strong>gender</strong> column in students table for complete profile data.
         </div>
     <?php endif; ?>
 
