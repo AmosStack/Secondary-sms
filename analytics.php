@@ -1,25 +1,13 @@
 <?php
 include "includes/db.php"; // Database connection
+require_once "endpoints/division_calculation.php";
 
-
-// Grade and remark logic
-function getGradeAndRemark($form, $mark) {
-    if ($mark === null) return ['-', '-'];
-    if ($form <= 4) {
-        if ($mark >= 75) return ['A', 'Excellent'];
-        if ($mark >= 65) return ['B', 'Very Good'];
-        if ($mark >= 55) return ['C', 'Good'];
-        if ($mark >= 35) return ['D', 'Poor'];
-        return ['F', 'Fail'];
-    } else {
-        if ($mark >= 80) return ['A', 'Excellent'];
-        if ($mark >= 70) return ['B', 'Very Good'];
-        if ($mark >= 60) return ['C', 'Good'];
-        if ($mark >= 50) return ['D', 'Fair'];
-        if ($mark >= 40) return ['E', 'Poor'];
-        if ($mark >= 35) return ['S', 'Very Poor'];
-        return ['F', 'Fail'];
+function getGradeAndRemark($form, $mark): array {
+    if ($mark === null) {
+        return ['-', '-'];
     }
+
+    return getGradeAndCommentByForm((int)$form, $mark, 'en');
 }
 
 // Filter logic
