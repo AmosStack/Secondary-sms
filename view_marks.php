@@ -61,7 +61,7 @@ $students = [];
 if ($class_ids) {
     $placeholders = implode(',', array_fill(0, count($class_ids), '?'));
     $types = str_repeat('i', count($class_ids));
-    $sql = "SELECT student_id AS student_id, name FROM students WHERE class_id IN ($placeholders) ORDER BY name";
+    $sql = "SELECT student_id AS student_id, full_name FROM students WHERE class_id IN ($placeholders) ORDER BY full_name";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param($types, ...$class_ids);
     $stmt->execute();
@@ -152,11 +152,11 @@ if ($students && $subjects) {
                     <?php foreach ($students as $index => $student): ?>
                         <tr>
                             <td><?= $index + 1 ?></td>
-                            <td><?= htmlspecialchars($student['name']) ?></td>
+                            <td><?= htmlspecialchars($student['full_name']) ?></td>
                             <?php
                                 $totalMarks = 0;
                                 $subjectCount = 0;
-                                $form = (int)$class_level;
+                                $form = $class_level;
                                 $subjectAverages = [];
                                 foreach ($subjects as $subject) {
                                     $markEntry = $marks_data[$student['student_id']][$subject['subject_id']] ?? null;
