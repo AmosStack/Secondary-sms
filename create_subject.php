@@ -69,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['name']) && !isset($_PO
 // Handle subject deletion
 if (isset($_GET['delete'])) {
     $delete_id = intval($_GET['delete']);
-    $stmt = $conn->prepare("DELETE FROM subjects WHERE id = ?");
+  $stmt = $conn->prepare("DELETE FROM subjects WHERE subject_id = ?");
     $stmt->bind_param("i", $delete_id);
     $stmt->execute();
     $stmt->close();
@@ -94,7 +94,7 @@ $subjects = $conn->query("SELECT * FROM subjects");
 
 <div class="container mt-5">
   <div class="mb-3">
-    <h3 class="text-primary\"><?= $edit_id ? '✏️ Edit Subject' : '📚 Add New Subject' ?></h3>
+    <h3 class="text-primary"><?= $edit_id ? '✏️ Edit Subject' : '📚 Add New Subject' ?></h3>
   </div>
 
   <?php if ($alert) echo $alert; ?>
