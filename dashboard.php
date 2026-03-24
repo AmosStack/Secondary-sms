@@ -28,7 +28,7 @@ $total_students = $conn->query("SELECT COUNT(*) AS cnt FROM students")->fetch_as
     }
     .sidebar {
       height: 100vh;
-      background-color: #45d6e9ff;
+      background-color: rgb(26, 6, 142);
       color: white;
       padding: 20px;
     }
@@ -66,7 +66,7 @@ $total_students = $conn->query("SELECT COUNT(*) AS cnt FROM students")->fetch_as
   <div class="row">
     <!-- Sidebar -->
     <div class="col-md-3 col-lg-2 sidebar">
-      <h4 class="text-white mb-4">📘 Mafiga SMS</h4>
+      <h4 class="text-white mb-4">📘 Academic IMS</h4>
       <a href="dashboard.php"><i class="fas fa-home"></i> Dashboard</a>
       <a href="view_classes.php"><i class="fas fa-chalkboard-teacher"></i> View Classes</a>
       <a href="register_class.php"><i class="fas fa-building"></i> Register Class</a>
@@ -98,15 +98,13 @@ $total_students = $conn->query("SELECT COUNT(*) AS cnt FROM students")->fetch_as
         <?php endforeach; ?>
       </div>
 
-      <a href="analytics.php"><i class="fas fa-chart-line"></i> Analytics</a>
-      <a href="overall_performance.php"><i class="fas fa-trophy"></i> Performance</a>
-      <a href="print_reports.php"><i class="fas fa-print"></i> Print Reports</a>
+      
       <a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 
     <!-- Main Content -->
     <div class="col-md-9 col-lg-10 py-4">
-      <h2 class="mb-4 text-primary text-center">📊 Mafiga School Management Dashboard</h2>
+      <h2 class="mb-4 text-primary text-center">📊 Secondary School Management Dashboard</h2>
 
       <!-- Stats Summary Row -->
       <div class="row g-3 mb-4">
