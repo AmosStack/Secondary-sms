@@ -10,7 +10,7 @@ if (!$mark_id) {
 
 // Fetch existing mark and related student/class info
 $stmt = $conn->prepare("
-    SELECT m.marks, s.student_id, s.name AS student_name, c.class_level, c.stream
+    SELECT m.marks, s.student_id, s.full_name AS student_name, c.class_level, c.stream
     FROM marks m
     JOIN students s ON m.student_id = s.student_id
     JOIN classes c ON s.class_id = c.class_id
