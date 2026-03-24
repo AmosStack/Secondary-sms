@@ -1,185 +1,54 @@
 <?php
 include "includes/db.php";
-require_once "endpoints/division_calculation.php";
 
 // Get students for dropdown
-$studentsRes = $conn->query("SELECT student_id AS student_id, name, class_id FROM students ORDER BY name");
+$studentsRes = $conn->query("SELECT student_id, full_name, class_id FROM students ORDER BY full_name");
 
-// Fetch classes to get class level and stream
+// Fetch classes to get class level and stream labels
 $classMap = [];
-$classRes = $conn->query("SELECT class_id AS class_id, class_level, stream FROM classes");
-while($c = $classRes->fetch_assoc()) {
+$classRes = $conn->query("SELECT class_id, class_level, stream FROM classes");
+while ($c = $classRes->fetch_assoc()) {
     $classMap[$c['class_id']] = $c;
 }
-
-$selectedStudentId = $_GET['student_id'] ?? null;
-
-$reportData = null;
-
-if ($selectedStudentId) {
-    // Fetch student info
-    $stmt = $conn->prepare("SELECT s.name, c.class_level, c.stream FROM students s JOIN classes c ON s.class_id = c.class_id WHERE s.student_id=?");
-    $stmt->bind_param("i", $selectedStudentId);
-    $stmt->execute();
-    $stmt->bind_result($studentName, $classLevel, $stream);
-    $stmt->fetch();
-    $stmt->close();
-
-    // Fetch marks for this student
-    $marksQuery = "SELECT sub.name AS subject, m.marks 
-                   FROM marks m 
-                   JOIN subjects sub ON m.subject_id = sub.subject_id
-                   WHERE m.student_id = ? ";
-    $params = [$selectedStudentId];
-    $types = "i";
-    $marksQuery .= " ORDER BY sub.name";
-
-    $stmt = $conn->prepare($marksQuery);
-    $stmt->bind_param($types, ...$params);
-    $stmt->execute();
-    $result = $stmt->get_result();
-
-    $marks = [];
-    while ($row = $result->fetch_assoc()) {
-        $marks[$row['subject']] = $row['marks'];
-    }
-    $stmt->close();
-
-    // Calculate grades, points, division
-    $subjectGrades = [];
-    $divisionPoints = [];
-    $totalMarks = 0;
-    $countSubjects = 0;
-
-    // Use appropriate grading based on class level
-    $form = (int)$classLevel;
-    $gradeComments = getGradeCommentsMap();
-
-    foreach ($marks as $subject => $mark) {
-        $totalMarks += $mark;
-        $countSubjects++;
-
-        $grade = getGradeByForm($form, $mark);
-        $point = getGradePointByForm($form, $grade);
-        $comment = $gradeComments[$grade] ?? '-';
-
-        $subjectGrades[$subject] = ['mark'=>$mark,'grade'=>$grade,'comment'=>$comment,'point'=>$point];
-
-        // Exclude General Studies from division points for F5-F6
-        if (!($form >=5 && strtolower($subject) === 'general studies')) {
-            if ($point !== null) $divisionPoints[] = $point;
-        }
-    }
-
-    $average = $countSubjects ? round($totalMarks / $countSubjects, 2) : 0;
-    $divisionResult = calculateDivisionResult($form, $marks);
-    $totalPoints = $divisionResult['valid'] ? $divisionResult['total_points'] : 0;
-    $divisionLabel = $divisionResult['division'];
-    $gpa = count($divisionResult['used_points'])
-        ? round(array_sum($divisionResult['used_points']) / count($divisionResult['used_points']), 2)
-        : 0;
-
-    $reportData = [
-        'studentName' => $studentName,
-        'classLevel' => $classLevel,
-        'stream' => $stream,
-        'subjectGrades' => $subjectGrades,
-        'totalMarks' => $totalMarks,
-        'average' => $average,
-        'gpa' => $gpa,
-        'division' => $divisionLabel,
-    ];
-}
 ?>
-
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Student Report Card</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .report { max-width: 700px; margin: auto; border: 1px solid #333; padding: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px;}
-        th, td { border: 1px solid #333; padding: 8px; text-align: center; }
-        th { background: #444; color: #fff; }
-        .header { text-align: center; }
-        .print-btn { margin: 20px 0; text-align: center; }
-        @media print {
-            .no-print { display: none; }
-        }
-    </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Print Student Report</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
 </head>
-<body>
+<body class="bg-light">
 
-<div class="no-print" style="max-width: 700px; margin:auto;">
-    <h2>Generate Student Report Card</h2>
-    <form method="get">
-        <label for="student_id">Select Student:</label>
-        <select name="student_id" id="student_id" required>
-            <option value="">-- Select Student --</option>
-            <?php while ($stu = $studentsRes->fetch_assoc()): 
-                $selected = ($stu['student_id'] == $selectedStudentId) ? "selected" : "";
-                $cls = $classMap[$stu['class_id']] ?? ['class_level'=>'','stream'=>''];
-                ?>
-                <option value="<?= $stu['student_id'] ?>" <?= $selected ?>><?= htmlspecialchars($stu['name'] . " (F".$cls['class_level']." - ".$cls['stream'].")") ?></option>
-            <?php endwhile; ?>
-        </select><br><br>
+<div class="container mt-5" style="max-width: 760px;">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="mb-0 text-primary">Print Student Report</h3>
+        <a href="dashboard.php" class="btn btn-secondary">Back to Dashboard</a>
+    </div>
 
-        <button type="submit">View Report</button>
-    </form>
-</div>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <p class="text-muted mb-3">This page uses the exact same report template as the download button in Overall Performance.</p>
+            <form method="get" action="download_report.php" target="_blank">
+                <div class="mb-3">
+                    <label for="student_id" class="form-label">Select Student</label>
+                    <select name="student_id" id="student_id" class="form-select" required>
+                        <option value="">-- Select Student --</option>
+                        <?php while ($stu = $studentsRes->fetch_assoc()):
+                            $cls = $classMap[$stu['class_id']] ?? ['class_level' => '', 'stream' => ''];
+                            $label = $stu['full_name'] . ' (F' . $cls['class_level'] . ' - ' . $cls['stream'] . ')';
+                        ?>
+                            <option value="<?= (int)$stu['student_id'] ?>"><?= htmlspecialchars($label) ?></option>
+                        <?php endwhile; ?>
+                    </select>
+                </div>
 
-<?php if ($reportData): ?>
-    <div class="report">
-        <div class="header">
-            <h1>School Name / Logo</h1>
-            <h2>Student Report Card</h2>
-            <p><strong>Student:</strong> <?= htmlspecialchars($reportData['studentName']) ?></p>
-            <p><strong>Class:</strong> F<?= htmlspecialchars((string)$reportData['classLevel']) ?> - <?= htmlspecialchars((string)($reportData['stream'] ?? '')) ?></p>
-        </div>
-
-        <table>
-            <thead>
-                <tr>
-                    <th>Subject</th>
-                    <th>Mark</th>
-                    <th>Grade</th>
-                    <th>Remark</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($reportData['subjectGrades'] as $subject => $data): ?>
-                    <tr>
-                        <td><?= htmlspecialchars($subject) ?></td>
-                        <td><?= $data['mark'] ?? '-' ?></td>
-                        <td><?= $data['grade'] ?? '-' ?></td>
-                        <td><?= $data['comment'] ?? '-' ?></td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-            <tfoot>
-                <tr>
-                    <th>Total</th>
-                    <th><?= $reportData['totalMarks'] ?></th>
-                    <th>GPA</th>
-                    <th><?= $reportData['gpa'] ?></th>
-                </tr>
-                <tr>
-                    <th colspan="3">Average Mark</th>
-                    <th><?= $reportData['average'] ?></th>
-                </tr>
-                <tr>
-                    <th colspan="3">Division</th>
-                    <th><?= $reportData['division'] ?></th>
-                </tr>
-            </tfoot>
-        </table>
-
-        <div class="print-btn">
-            <button onclick="window.print()">Print Report</button>
+                <button type="submit" class="btn btn-primary">Open Printable Report</button>
+            </form>
         </div>
     </div>
-<?php endif; ?>
+</div>
 
 </body>
 </html>
