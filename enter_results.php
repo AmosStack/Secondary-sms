@@ -4,6 +4,20 @@ require 'vendor/autoload.php'; // PhpSpreadsheet must be installed via Composer
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
+function canLoadSpreadsheetFile(string $originalName): array {
+    $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+    $isZipBased = in_array($ext, ['xlsx', 'xlsm', 'xltx', 'xltm', 'ods'], true);
+
+    if ($isZipBased && !class_exists('ZipArchive')) {
+        return [
+            false,
+            'ZIP support is missing. Enable the PHP zip extension in XAMPP php.ini (extension=zip) and restart Apache.'
+        ];
+    }
+
+    return [true, ''];
+}
+
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     // Get posted data
@@ -17,6 +31,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
 
     $file = $_FILES['marks_file']['tmp_name'];
+    $originalFileName = $_FILES['marks_file']['name'] ?? '';
+
+    [$canLoad, $dependencyError] = canLoadSpreadsheetFile($originalFileName);
+    if (!$canLoad) {
+        echo "<script>alert('❌ Upload failed: {$dependencyError}'); history.back();</script>";
+        exit;
+    }
 
     try {
         $spreadsheet = IOFactory::load($file);
@@ -28,7 +49,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $nameIndex = array_search("Name", $headers);
 
         // Get subject name
-        $subjectNameRes = $conn->query("SELECT name FROM subjects WHERE id = $subject_id");
+        $subjectNameRes = $conn->query("SELECT name FROM subjects WHERE subject_id = $subject_id");
         if (!$subjectNameRes || $subjectNameRes->num_rows == 0) {
             echo "<script>alert('❌ Invalid subject ID.'); history.back();</script>";
             exit;
@@ -57,7 +78,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $result = $stmt->get_result();
 
             if ($student = $result->fetch_assoc()) {
-                $student_id = $student['id'];
+                $student_id = $student['student_id'];
 
                 // Insert or update mark due to unique(student_id, subject_id)
                 $insert = $conn->prepare("INSERT INTO marks (student_id, subject_id, marks, date_recorded) VALUES (?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE marks = VALUES(marks), date_recorded = NOW()");
