@@ -36,11 +36,11 @@ if ($classIds) {
     $classTypes = str_repeat('i', count($classIds));
 
     // Students in selected classes.
-    $sqlStudents = "SELECT s.student_id, s.name, c.stream, c.class_level
+    $sqlStudents = "SELECT s.student_id, s.full_name, c.stream, c.class_level
                     FROM students s
                     JOIN classes c ON s.class_id = c.class_id
                     WHERE s.class_id IN ($classPlaceholders)
-                    ORDER BY c.stream, s.name";
+                    ORDER BY c.stream, s.full_name";
     $stmt = $conn->prepare($sqlStudents);
     $stmt->bind_param($classTypes, ...$classIds);
     $stmt->execute();
@@ -101,7 +101,7 @@ foreach ($students as $student) {
     $pdf->AddPage();
 
     $studentId = (int)$student['student_id'];
-    $form = (int)$student['class_level'];
+    $form = $student['class_level'];
     $studentMarks = $marksByStudent[$studentId] ?? [];
 
     $rowsHtml = '';
@@ -134,7 +134,7 @@ foreach ($students as $student) {
 
     $html = '
         <h2>Student Report</h2>
-        <p><strong>Name:</strong> ' . htmlspecialchars($student['name']) . '</p>
+        <p><strong>Name:</strong> ' . htmlspecialchars($student['full_name']) . '</p>
         <p><strong>Class:</strong> ' . htmlspecialchars((string)$student['class_level']) . ' | <strong>Stream:</strong> ' . htmlspecialchars((string)$student['stream']) . '</p>
         <table border="1" cellpadding="5">
             <tr><th>Subject</th><th>Mark</th><th>Grade</th><th>Remark</th></tr>' .
