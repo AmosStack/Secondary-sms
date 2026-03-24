@@ -1,156 +1,166 @@
-# Mafiga School Management System
+# Secondary School Management System
 
-A PHP + MySQL school result management system for managing classes, subjects, students, marks entry, and performance reports.
+Mafiga is a PHP + MySQL/MariaDB school results system for managing classes, subjects, students, marks, and report generation.
 
-## Overview
+## Current Version Summary
 
-This project provides an admin-facing dashboard to:
-- register classes/streams and assign subjects
-- register students (manual and Excel upload)
-- enter marks (manual and Excel upload)
-- view marks with grade, points, and division calculations
-- review overall class performance
-- print student reports
+This version includes:
+- centralized grade/point/division logic in `endpoints/division_calculation.php`
+- endpoint handlers moved under the `endpoints/` folder
+- student naming standardized to `full_name` (with compatibility fallback in some flows)
+- student `gender` support in registration
+- `print_reports.php` aligned to use the same report output path as `overall_performance.php` download action (via `download_report.php`)
+
+## Core Features
+
+- Admin authentication (`admin` table)
+- Subject management (create, edit, delete)
+- Class + stream registration and subject assignment
+- Student registration:
+   - manual entry
+   - Excel upload (PhpSpreadsheet)
+- Marks entry:
+   - manual per class/subject
+   - Excel upload
+- Performance views:
+   - detailed marks view with grade and division
+   - overall class performance rankings
+- PDF report generation (TCPDF)
 
 ## Tech Stack
 
-- PHP (procedural)
+- PHP (mysqli, procedural style)
 - MySQL / MariaDB
 - Bootstrap 5
-- jQuery
-- Composer dependencies:
-  - phpoffice/phpspreadsheet
-  - tecnickcom/tcpdf
+- JavaScript (fetch-based dependent dropdown loading)
+- Composer packages:
+   - `phpoffice/phpspreadsheet`
+   - `tecnickcom/tcpdf`
 
-## Main Modules
+## Key Pages
 
-- `index.php`: Landing page
-- `login.php`, `register.php`, `logout.php`: Admin authentication
-- `dashboard.php`: Main navigation hub
-- `register_class.php`: Create class + stream and assign subjects
-- `create_subject.php`: Manage subjects
-- `register_student.php`: Student registration (manual + Excel)
-- `enter_results.php`: Marks entry portal (manual + Excel)
-- `save_marks.php`: Save/update marks per subject
-- `view_students.php`: Student listing by class and stream
-- `view_marks.php`: Marks listing with totals, grades, points, and division
-- `overall_performance.php`: Ranked class performance
-- `print_reports.php`: Printable report card view
-- `download_report.php`: PDF report download path (TCPDF-based)
+- `index.php` - landing page
+- `login.php`, `register.php`, `logout.php` - authentication
+- `dashboard.php` - main admin hub
+- `create_subject.php` - subject CRUD
+- `register_class.php` - class/stream + subject assignment
+- `register_student.php` - manual + Excel student registration
+- `enter_results.php` - marks entry portal (manual + Excel)
+- `enter_marks_manual.php` - manual marks entry form
+- `view_students.php` - students listing
+- `view_marks.php` - marks, averages, grades, divisions
+- `overall_performance.php` - class-level performance ranking
+- `print_reports.php` - student selector that opens `download_report.php`
+- `download_report.php` - student report PDF generator
 
-Supporting API/endpoints:
-- `get_stream.php`
-- `get_streams.php`
-- `get_streams_by_level.php`
-- `get_subjects.php`
+## Endpoints
+
+All primary AJAX/save endpoints are under `endpoints/`:
+- `endpoints/get_stream.php`
+- `endpoints/get_streams.php`
+- `endpoints/get_streams_by_level.php`
+- `endpoints/get_subjects.php`
 - `endpoints/get_stream_subjects.php`
+- `endpoints/save_marks.php`
+- `endpoints/division_calculation.php`
 
-## Prerequisites
+## Grading and Division
 
-- XAMPP (Apache + MySQL)
+Grading and division rules are centralized in `endpoints/division_calculation.php` and reused by reporting and performance pages.
+
+Main helper functions include:
+- `normalizeFormLevel(...)`
+- `getGradeByForm(...)`
+- `getGradePointByForm(...)`
+- `calculateDivisionResult(...)`
+- `getGradeAndCommentByForm(...)`
+
+## Requirements
+
+- XAMPP (Apache + MySQL) or equivalent PHP + MySQL stack
 - PHP 8.0+
 - Composer
-- MySQL user with permission to create/import database
+- MySQL user with create/import permissions
 
-## Installation (XAMPP, Windows)
+## Installation (Windows + XAMPP)
 
-1. Place project in XAMPP web root:
-   - `c:/xampp/htdocs/mafiga`
+1. Put the project in:
+    - `c:/xampp/htdocs/mafiga`
 
-2. Install PHP dependencies:
+2. Install dependencies:
 
 ```bash
 cd c:/xampp/htdocs/mafiga
 composer install
 ```
 
-3. Create/import database:
-   - Create database named `mafiga`
-   - Import `mafiga.sql`
+3. Create database and import schema:
+    - Create database `mafiga`
+    - Import `mafiga2.sql` (recommended for this version)
 
-4. Configure database credentials in `includes/db.php`:
+4. Configure DB credentials in `includes/db.php`.
 
-```php
-$host = "localhost";
-$user = "root";
-$password = "";
-$dbname = "mafiga";
+5. Start Apache + MySQL from XAMPP Control Panel.
+
+6. Open:
+    - `http://localhost/mafiga/`
+
+## Schema Notes (Important)
+
+This codebase expects student names in `students.full_name` in many pages.
+
+If your DB still uses `students.name`, run migration SQL:
+
+```sql
+ALTER TABLE students ADD COLUMN full_name VARCHAR(150) NULL AFTER student_id;
+UPDATE students SET full_name = name WHERE (full_name IS NULL OR full_name = '') AND name IS NOT NULL;
+ALTER TABLE students MODIFY full_name VARCHAR(150) NOT NULL;
 ```
 
-5. Start Apache and MySQL in XAMPP Control Panel.
+If gender is missing, add it:
 
-6. Open in browser:
-   - `http://localhost/mafiga/`
+```sql
+ALTER TABLE students ADD COLUMN gender ENUM('Male','Female') NOT NULL DEFAULT 'Male' AFTER full_name;
+```
 
-## First-Time Usage
+Optional cleanup after confirming all flows work with `full_name`:
 
-1. Create an admin account:
-   - Use `register.php` directly, or use the sign-up panel in `login.php` (action mapping may require adjustment in some setups).
+```sql
+ALTER TABLE students DROP COLUMN name;
+```
 
-2. Login as admin.
+## Excel Upload Format
 
-3. Create subjects in `create_subject.php`.
+### Student Upload (`register_student.php`)
+- Required columns: `Name`, `Class`, `Stream`
+- Optional column: `Gender`
 
-4. Register class and stream in `register_class.php`, selecting subjects for each class-stream.
+### Marks Upload (`enter_results.php`)
+- Required column: `Name`
+- Required subject column: exact subject name (for example `Mathematics`)
 
-5. Register students in `register_student.php`:
-   - manual form, or
-   - Excel upload with columns: `Name`, `Gender`, `Class`, `Stream`
+## Report Flow
 
-6. Enter marks in `enter_results.php`:
-   - manual path (per class/subject), or
-   - Excel upload path with columns including:
-     - `Name`
-     - the exact subject name column (e.g. `Mathematics`)
-
-7. Review results:
-   - `view_marks.php`
-   - `overall_performance.php`
-   - `print_reports.php`
-
-## Grading and Division Logic
-
-The system includes separate grading scales for:
-- Forms 1-4
-- Forms 5-6
-
-Grade boundaries, points mapping, and division calculation are implemented in page-level helpers (for example in `view_marks.php`, `overall_performance.php`, and `print_reports.php`).
-
-## Current Implementation Notes
-
-The repository contains some schema/code mismatches. If you are setting this up from scratch, review these items early:
-
-1. `mafiga.sql` does not include an `admin` table, but authentication expects it.
-2. `mafiga.sql` students table does not include `gender`, but student pages use `students.gender`.
-3. Several files reference columns/tables not present in `mafiga.sql`:
-   - `analytics.php` references `results` table and `mark` field shape.
-   - `print_reports.php` filters marks by `m.term` and `m.year`.
-   - `download_report.php` expects `test` and `exam` fields and currently has an SQL syntax issue in one query.
-   - `endpoints/get_stream_subjects.php` expects `subjects.class_id` and `subjects.subject_name`, while current schema uses `class_subjects` and `subjects.name`.
-4. `enter_marks_manual.php` reads `class_id` and `subject_id` from GET, while `enter_results.php` manual form submits POST.
-5. Some redirects point to `enter_marks.php`, but the project currently uses `enter_results.php`.
-
-If needed, align schema and code paths before production use.
-
-## Recommended Development Workflow
-
-1. Normalize the schema and naming (class level format, subject fields, marks fields).
-2. Centralize grade/division helper functions in one shared file.
-3. Add session/auth guards to all admin pages.
-4. Add migrations/seed scripts for repeatable setup.
-5. Add validation and error logging instead of inline alerts/die calls.
+- `overall_performance.php` provides per-student download actions.
+- `print_reports.php` now only selects a student and forwards to `download_report.php`.
+- `download_report.php` is the shared PDF renderer for both flows.
 
 ## Troubleshooting
 
-- Composer autoload errors:
-  - run `composer install`
-- Database connection errors:
-  - verify `includes/db.php` credentials and ensure MySQL is running
-- Blank page / PHP warnings:
-  - enable error reporting in development
-- Mark upload inserts no rows:
-  - verify Excel headers exactly match required names and student names match DB records
+- `Class "ZipArchive" not found` during Excel upload:
+   - Enable ZIP extension in active `php.ini`:
+      - `extension=zip`
+   - Restart Apache.
+
+- Composer/autoload issues:
+   - Run `composer install` from project root.
+
+- Database errors like unknown column:
+   - Confirm schema matches this version (`mafiga2.sql` + migrations above).
+
+- No marks imported:
+   - Ensure Excel headers match exactly and student names align with DB records.
 
 ## License
 
-No license file is currently defined in the project root. Add a `LICENSE` file before public distribution.
+No license file is currently included. Add a `LICENSE` file before distribution.
