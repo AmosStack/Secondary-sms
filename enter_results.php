@@ -72,7 +72,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             if ($studentName === "" || $marks === "") continue;
 
             // Find student by name and class
-            $stmt = $conn->prepare("SELECT student_id FROM students WHERE name = ? AND class_id = ?");
+            $stmt = $conn->prepare("SELECT student_id FROM students WHERE full_name = ? AND class_id = ?");
             $stmt->bind_param("si", $studentName, $class_id);
             $stmt->execute();
             $result = $stmt->get_result();
@@ -210,7 +210,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <script>
 function loadStreams(level, streamSelectId, subjectSelectId) {
     if (!level) return;
-    fetch('get_streams_by_level.php?level=' + encodeURIComponent(level))
+    fetch('endpoints/get_streams_by_level.php?level=' + encodeURIComponent(level))
         .then(r => r.text())
         .then(data => {
             document.getElementById(streamSelectId).innerHTML = data;
@@ -220,7 +220,7 @@ function loadStreams(level, streamSelectId, subjectSelectId) {
 
 function loadSubjects(classId, subjectSelectId) {
     if (!classId) return;
-    fetch('get_subjects.php?class_id=' + encodeURIComponent(classId))
+    fetch('endpoints/get_subjects.php?class_id=' + encodeURIComponent(classId))
         .then(r => r.text())
         .then(data => {
             document.getElementById(subjectSelectId).innerHTML = data;
