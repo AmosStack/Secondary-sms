@@ -1,37 +1,6 @@
 <?php
 include "includes/db.php";
-
-// Grade functions and division logic (simplified for demo)
-function getGradeF1toF4($avg) {
-    if ($avg >= 75) return "A";
-    if ($avg >= 65) return "B";
-    if ($avg >= 55) return "C";
-    if ($avg >= 35) return "D";
-    return "F";
-}
-
-function getGradeF5toF6($avg) {
-    if ($avg >= 80) return "A";
-    if ($avg >= 70) return "B";
-    if ($avg >= 60) return "C";
-    if ($avg >= 50) return "D";
-    if ($avg >= 40) return "E";
-    if ($avg >= 35) return "S";
-    return "F";
-}
-
-$gradePointsF1toF4 = ['A'=>1,'B'=>2,'C'=>3,'D'=>4,'F'=>5];
-$gradePointsF5toF6 = ['A'=>1,'B'=>2,'C'=>3,'D'=>4,'E'=>5,'S'=>6,'F'=>7];
-
-$gradeComments = [
-    'A' => 'Excellent',
-    'B' => 'Very Good',
-    'C' => 'Good',
-    'D' => 'Fair',
-    'E' => 'Poor',
-    'S' => 'Very Poor',
-    'F' => 'Fail'
-];
+require_once "endpoints/division_calculation.php";
 
 // Get students for dropdown
 $studentsRes = $conn->query("SELECT student_id AS student_id, name, class_id FROM students ORDER BY name");
@@ -84,14 +53,14 @@ if ($selectedStudentId) {
 
     // Use appropriate grading based on class level
     $form = (int)$classLevel;
-    $gradePoints = $form <= 4 ? $gradePointsF1toF4 : $gradePointsF5toF6;
+    $gradeComments = getGradeCommentsMap();
 
     foreach ($marks as $subject => $mark) {
         $totalMarks += $mark;
         $countSubjects++;
 
-        $grade = $form <=4 ? getGradeF1toF4($mark) : getGradeF5toF6($mark);
-        $point = $gradePoints[$grade] ?? null;
+        $grade = getGradeByForm($form, $mark);
+        $point = getGradePointByForm($form, $grade);
         $comment = $gradeComments[$grade] ?? '-';
 
         $subjectGrades[$subject] = ['mark'=>$mark,'grade'=>$grade,'comment'=>$comment,'point'=>$point];
@@ -103,41 +72,12 @@ if ($selectedStudentId) {
     }
 
     $average = $countSubjects ? round($totalMarks / $countSubjects, 2) : 0;
-    $gpa = 0;
-    if (count($divisionPoints) > 0) {
-        sort($divisionPoints);
-        $subjectsCount = $form <=4 ? 7 : 3;
-        $usePoints = array_slice($divisionPoints, 0, $subjectsCount);
-        $gpa = round(array_sum($usePoints)/count($usePoints), 2);
-    }
-
-    // Determine division based on GPA points
-    $divisionRangesF1toF4 = [
-        "Div 1" => [7, 17],
-        "Div 2" => [18, 21],
-        "Div 3" => [22, 25],
-        "Div 4" => [26, 33],
-        "Div 0" => [34, 35]
-    ];
-
-    $divisionRangesF5toF6 = [
-        "Div 1" => [3, 9],
-        "Div 2" => [10, 12],
-        "Div 3" => [13, 17],
-        "Div 4" => [18, 19],
-        "Div 0" => [20, 21]
-    ];
-
-    $divisionLabel = "No division";
-    $totalPoints = array_sum($divisionPoints);
-
-    $ranges = $form <=4 ? $divisionRangesF1toF4 : $divisionRangesF5toF6;
-    foreach ($ranges as $div => [$min, $max]) {
-        if ($totalPoints >= $min && $totalPoints <= $max) {
-            $divisionLabel = $div;
-            break;
-        }
-    }
+    $divisionResult = calculateDivisionResult($form, $marks);
+    $totalPoints = $divisionResult['valid'] ? $divisionResult['total_points'] : 0;
+    $divisionLabel = $divisionResult['division'];
+    $gpa = count($divisionResult['used_points'])
+        ? round(array_sum($divisionResult['used_points']) / count($divisionResult['used_points']), 2)
+        : 0;
 
     $reportData = [
         'studentName' => $studentName,
