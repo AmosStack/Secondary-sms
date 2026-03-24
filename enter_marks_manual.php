@@ -13,7 +13,7 @@ if (!$class_id || !$subject_id) {
 
 // Fetch students
 $students = [];
-$stmt = $conn->prepare("SELECT id, name FROM students WHERE class_id = ?");
+$stmt = $conn->prepare("SELECT student_id, name FROM students WHERE class_id = ?");
 $stmt->bind_param("i", $class_id);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -45,8 +45,8 @@ while ($row = $result->fetch_assoc()) {
 
                 <?php foreach ($students as $student): ?>
                     <div class="mb-3">
-                        <label class="form-label"><?= htmlspecialchars($student['name']) ?></label>
-                        <input type="hidden" name="student_ids[]" value="<?= $student['id'] ?>">
+                        <label class="form-label"><?= htmlspecialchars($student['full_name']) ?></label>
+                        <input type="hidden" name="student_ids[]" value="<?= $student['student_id'] ?>">
                         <input type="number" name="marks[]" class="form-control" required>
                     </div>
                 <?php endforeach; ?>
