@@ -1,4 +1,6 @@
 <?php
+require_once 'endpoints/division_calculation.php';
+
 // Simulated student data
 $student = [
     'name' => 'ISAYA JAMES JUMBE',
@@ -22,22 +24,6 @@ $subjects = [
     ['name' => 'HISABATI', 'test' => 4, 'exam' => 5],
     ['name' => 'BIASHARA', 'test' => 0, 'exam' => 0], // not taken
 ];
-
-function getGrade($avg) {
-    if ($avg >= 75) return ['A', 'UFAULU MZURI'];
-    if ($avg >= 65) return ['B', 'VIZURI'];
-    if ($avg >= 45) return ['C', 'WASTANI'];
-    if ($avg >= 30) return ['D', 'HAFIFU'];
-    return ['F', 'AMEFELI'];
-}
-
-function getDivisionF1toF4($points) {
-    if ($points >= 7 && $points <= 17) return 1;
-    if ($points <= 21) return 2;
-    if ($points <= 25) return 3;
-    if ($points <= 33) return 4;
-    return 0;
-}
 
 function simulateBehavior($average) {
     if ($average >= 65) return ['A', 'B', 'A', 'B', 'A'];
@@ -76,10 +62,19 @@ foreach ($subjects as $s) {
 }
 
 $average = $totalSubjects ? round($totalMarks / $totalSubjects, 2) : 0;
-[$finalGrade, $finalRemark] = getGrade($average);
+$form = 3;
+[$finalGrade, $finalRemark] = getGradeAndCommentByForm($form, $average, 'sw');
 
-$points = 36; // simulated points
-$division = getDivisionF1toF4($points);
+$subjectAverages = [];
+foreach ($subjects as $s) {
+  $sum = $s['test'] + $s['exam'];
+  if ($sum > 0) {
+    $subjectAverages[$s['name']] = (float)$sum;
+  }
+}
+$divisionResult = calculateDivisionResult($form, $subjectAverages);
+$points = $divisionResult['valid'] ? $divisionResult['total_points'] : 0;
+$division = $divisionResult['division'];
 
 $behavior = simulateBehavior($average);
 $finalComments = getFinalComments($average);
