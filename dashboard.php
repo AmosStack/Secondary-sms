@@ -54,6 +54,11 @@ $total_students = $conn->query("SELECT COUNT(*) AS cnt FROM students")->fetch_as
     .dashboard-card:hover {
       transform: scale(1.02);
     }
+    .dashboard-link,
+    .dashboard-link p,
+    .dashboard-link h5 {
+      text-decoration: none !important;
+    }
     /* For collapse toggle arrow */
     .sidebar a.d-flex {
       cursor: pointer;
@@ -136,7 +141,7 @@ $total_students = $conn->query("SELECT COUNT(*) AS cnt FROM students")->fetch_as
 
       <div class="row g-4">
         <div class="col-md-4">
-          <a href="analytics.php" class="text-dark">
+          <a href="analytics.php" class="text-dark dashboard-link">
             <div class="dashboard-card border-success">
               <h5>📈 Analytics</h5>
               <p>Visual insights of student performance.</p>
@@ -145,7 +150,7 @@ $total_students = $conn->query("SELECT COUNT(*) AS cnt FROM students")->fetch_as
         </div>
 
         <div class="col-md-4">
-          <a href="overall_performance.php" class="text-dark">
+          <a href="overall_performance.php" class="text-dark dashboard-link">
             <div class="dashboard-card border-primary">
               <h5>🏆 Overall Performance</h5>
               <p>Ranked student results from best to last.</p>
@@ -154,7 +159,7 @@ $total_students = $conn->query("SELECT COUNT(*) AS cnt FROM students")->fetch_as
         </div>
 
         <div class="col-md-4">
-          <a href="print_reports.php" class="text-dark" target="_blank">
+          <a href="print_reports.php" class="text-dark dashboard-link" target="_blank">
             <div class="dashboard-card border-danger">
               <h5>🖨️ Print Reports</h5>
               <p>Generate and print academic reports.</p>
