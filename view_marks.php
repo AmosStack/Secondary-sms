@@ -1,5 +1,6 @@
 <?php
 include 'includes/db.php';
+require_once 'endpoints/division_calculation.php';
 
 // Get selected class_level and sanitize
 $class_level = $_GET['class_level'] ?? '';
@@ -7,54 +8,6 @@ $class_level = htmlspecialchars($class_level);
 
 // Get selected stream or 'all'
 $stream_filter = $_GET['stream'] ?? 'all';
-
-// === Helper Functions for Grades & Divisions ===
-
-function getGradeF1toF4($mark) {
-    if ($mark >= 75) return 'A';
-    if ($mark >= 65) return 'B';
-    if ($mark >= 55) return 'C';
-    if ($mark >= 35) return 'D';
-    return 'F';
-}
-
-function getPointF1toF4($grade) {
-    $points_map = ['A' => 1, 'B' => 2, 'C' => 3, 'D' => 4, 'F' => 5];
-    return $points_map[$grade] ?? 0;
-}
-
-function getDivisionF1toF4($totalPoints) {
-    if ($totalPoints >= 7 && $totalPoints <= 17) return 'Div 1';
-    if ($totalPoints >= 18 && $totalPoints <= 21) return 'Div 2';
-    if ($totalPoints >= 22 && $totalPoints <= 25) return 'Div 3';
-    if ($totalPoints >= 26 && $totalPoints <= 33) return 'Div 4';
-    if ($totalPoints >= 34 && $totalPoints <= 35) return 'Div 0';
-    return '-';
-}
-
-function getGradeF5toF6($mark) {
-    if ($mark >= 80) return 'A';
-    if ($mark >= 70) return 'B';
-    if ($mark >= 60) return 'C';
-    if ($mark >= 50) return 'D';
-    if ($mark >= 40) return 'E';
-    if ($mark >= 35) return 'S';
-    return 'F';
-}
-
-function getPointF5toF6($grade) {
-    $points_map = ['A' => 1, 'B' => 2, 'C' => 3, 'D' => 4, 'E' => 5, 'S' => 6, 'F' => 7];
-    return $points_map[$grade] ?? 0;
-}
-
-function getDivisionF5toF6($totalPoints) {
-    if ($totalPoints >= 3 && $totalPoints <= 9) return 'Div 1';
-    if ($totalPoints >= 10 && $totalPoints <= 12) return 'Div 2';
-    if ($totalPoints >= 13 && $totalPoints <= 17) return 'Div 3';
-    if ($totalPoints >= 18 && $totalPoints <= 19) return 'Div 4';
-    if ($totalPoints >= 20 && $totalPoints <= 21) return 'Div 0';
-    return '-';
-}
 
 // === Fetch streams for selected class level ===
 $streams = [];
@@ -203,7 +156,8 @@ if ($students && $subjects) {
                             <?php
                                 $totalMarks = 0;
                                 $subjectCount = 0;
-                                $totalPoints = 0;
+                                $form = (int)$class_level;
+                                $subjectAverages = [];
                                 foreach ($subjects as $subject) {
                                     $markEntry = $marks_data[$student['student_id']][$subject['subject_id']] ?? null;
                                     $mark = $markEntry['marks'] ?? '';
@@ -212,19 +166,10 @@ if ($students && $subjects) {
                                     if ($mark !== '' && $mark !== null) {
                                         $totalMarks += $mark;
                                         $subjectCount++;
-
-                                        if ((int)$class_level <= 4) {
-                                            $grade = getGradeF1toF4($mark);
-                                            $points = getPointF1toF4($grade);
-                                        } else {
-                                            $grade = getGradeF5toF6($mark);
-                                            $points = getPointF5toF6($grade);
-                                        }
+                                        $subjectAverages[$subject['name']] = (float)$mark;
                                     } else {
                                         $mark = '-';
-                                        $points = 0;
                                     }
-                                    $totalPoints += $points;
                                     ?>
                                     <td>
                                         <?= htmlspecialchars($mark) ?>
@@ -237,23 +182,21 @@ if ($students && $subjects) {
 
                                 if ($subjectCount) {
                                     $average = $totalMarks / $subjectCount;
-                                    if ((int)$class_level <= 4) {
-                                        $avgGrade = getGradeF1toF4($average);
-                                        $division = getDivisionF1toF4($totalPoints);
-                                    } else {
-                                        $avgGrade = getGradeF5toF6($average);
-                                        $division = getDivisionF5toF6($totalPoints);
-                                    }
+                                    $avgGrade = getGradeByForm($form, $average);
+                                    $divisionResult = calculateDivisionResult($form, $subjectAverages);
+                                    $totalPoints = $divisionResult['valid'] ? $divisionResult['total_points'] : '-';
+                                    $division = $divisionResult['division'];
                                 } else {
                                     $average = '-';
                                     $avgGrade = '-';
+                                    $totalPoints = '-';
                                     $division = '-';
                                 }
                             ?>
                             <td><?= $subjectCount ? $totalMarks : '-' ?></td>
                             <td><?= $subjectCount ? round($average, 2) : '-' ?></td>
                             <td><?= htmlspecialchars($avgGrade) ?></td>
-                            <td><?= $subjectCount ? $totalPoints : '-' ?></td>
+                            <td><?= $totalPoints ?></td>
                             <td><?= htmlspecialchars($division) ?></td>
                         </tr>
                     <?php endforeach; ?>
