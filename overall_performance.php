@@ -114,7 +114,13 @@ if ($selectedClass) {
 // Fetch marks for all students and subjects
 $marksData = [];
 if ($students && $subjectIds) {
-    $studentIds = array_column($students, 'id');
+    $studentIds = array_column($students, 'student_id');
+
+    if (!$studentIds) {
+        $students = [];
+    }
+
+    if ($studentIds) {
     $studentPlaceholders = implode(',', array_fill(0, count($studentIds), '?'));
     $studentTypes = str_repeat('i', count($studentIds));
 
@@ -131,6 +137,7 @@ if ($students && $subjectIds) {
         $marksData[$row['student_id']][$row['subject_id']] = $row['marks'];
     }
     $stmt->close();
+    }
 }
 
 // Calculate performance data for each student
@@ -142,7 +149,7 @@ foreach ($students as $student) {
     $subjectPointsList = [];
 
     foreach ($subjectIds as $subjId) {
-        $mark = $marksData[$student['id']][$subjId] ?? null;
+        $mark = $marksData[$student['student_id']][$subjId] ?? null;
         if ($mark !== null && $mark !== '') {
             $total += $mark;
             $count++;
@@ -162,12 +169,12 @@ foreach ($students as $student) {
     $division = getDivisionAndPoints($points, $student['class_level']);
 
     $performance[] = [
-        'id' => $student['id'],
+        'id' => $student['student_id'],
         'name' => $student['name'],
         'stream' => $student['stream'],
         'class_level' => $student['class_level'],
         'marks' => array_map(function($subjId) use ($marksData, $student) {
-            return $marksData[$student['id']][$subjId] ?? '-';
+            return $marksData[$student['student_id']][$subjId] ?? '-';
         }, $subjectIds),
         'total' => $total,
         'average' => $average,
