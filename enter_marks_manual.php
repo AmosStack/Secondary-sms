@@ -13,7 +13,7 @@ if (!$class_id || !$subject_id) {
 
 // Fetch students
 $students = [];
-$stmt = $conn->prepare("SELECT student_id, name FROM students WHERE class_id = ?");
+$stmt = $conn->prepare("SELECT student_id, full_name FROM students WHERE class_id = ? ORDER BY full_name");
 $stmt->bind_param("i", $class_id);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -40,7 +40,7 @@ while ($row = $result->fetch_assoc()) {
         <div class="card-body">
             <h5 class="text-primary mb-3">📘 Enter Marks Per Student</h5>
 
-            <form method="POST" action="save_marks.php">
+            <form method="POST" action="endpoints/save_marks.php">
                 <input type="hidden" name="subject_id" value="<?= htmlspecialchars($subject_id) ?>">
 
                 <?php foreach ($students as $student): ?>
