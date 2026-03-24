@@ -1,6 +1,7 @@
 <?php
 require_once 'tcpdf/tcpdf.php';  // adjust path to tcpdf.php
 include 'includes/db.php';  // your DB connection
+require_once 'endpoints/division_calculation.php';
 
 if (!isset($_GET['student_id'])) {
     die("Student ID missing.");
@@ -48,24 +49,6 @@ while ($row = $results->fetch_assoc()) {
 }
 $stmt->close();
 
-// Helper functions (reuse yours, simplified)
-
-function getGrade($avg) {
-    if ($avg >= 75) return ['A', 'UFAULU MZURI'];
-    if ($avg >= 65) return ['B', 'VIZURI'];
-    if ($avg >= 45) return ['C', 'WASTANI'];
-    if ($avg >= 30) return ['D', 'HAFIFU'];
-    return ['F', 'AMEFELI'];
-}
-
-function getDivisionF1toF4($points) {
-    if ($points >= 7 && $points <= 17) return 1;
-    if ($points <= 21) return 2;
-    if ($points <= 25) return 3;
-    if ($points <= 33) return 4;
-    return 0;
-}
-
 function simulateBehavior($average) {
     if ($average >= 65) return ['A', 'B', 'A', 'B', 'A'];
     if ($average >= 45) return ['B', 'C', 'B', 'C', 'B'];
@@ -100,9 +83,18 @@ foreach ($subjects as $s) {
     $totalSubjects++;
 }
 $average = $totalSubjects ? round($totalMarks / $totalSubjects, 2) : 0;
-list($finalGrade, $finalRemark) = getGrade($average);
-$points = (int)($totalMarks / 10);
-$division = getDivisionF1toF4($points);
+$form = (int)$student['class_level'];
+[$finalGrade, $finalRemark] = getGradeAndCommentByForm($form, $average, 'sw');
+
+$subjectAverages = [];
+foreach ($subjects as $s) {
+    if ((int)$s['marks'] > 0) {
+        $subjectAverages[$s['name']] = (float)$s['marks'];
+    }
+}
+$divisionResult = calculateDivisionResult($form, $subjectAverages);
+$points = $divisionResult['valid'] ? $divisionResult['total_points'] : 0;
+$division = $divisionResult['division'];
 $behavior = simulateBehavior($average);
 $finalComments = getFinalComments($average);
 
@@ -164,7 +156,7 @@ foreach ($subjects as $subj) {
         continue;
     }
     $avg = $sum;
-    list($grade, $remark) = getGrade($avg);
+    [$grade, $remark] = getGradeAndCommentByForm($form, $avg, 'sw');
 
     $html .= "<tr>
         <td>{$subj['name']}</td>
