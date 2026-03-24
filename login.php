@@ -45,7 +45,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <body>
   <div class="container" id="container">
     <div class="form-container sign-up">
-      <form action="register" method="POST">
+      <form action="register.php" method="POST">
         <h1>Create Account</h1>
         <div class="social-icons">
           <a href="#" class="icon"><i class="fab fa-google"></i></a>
@@ -60,7 +60,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </div>
 
     <div class="form-container sign-in">
-      <form action="login" method="POST">
+      <form action="login.php" method="POST">
         <h1>Log in</h1>
         <div class="social-icons">
           <a href="#" class="icon"><i class="fab fa-google"></i></a>
@@ -71,6 +71,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <input type="password" name="password" placeholder="Password" required />
         <a href="#">Forgot Password?</a>
         <button type="submit">Sign In</button>
+        <a href="index.php" style="display:inline-block; margin-top:10px; text-decoration:none;">Back to Home</a>
       </form>
     </div>
 
