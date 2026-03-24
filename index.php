@@ -5,7 +5,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Welcome to Mafiga School Management System</title>
+  <title>Welcome to School Management System</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- Bootstrap & Fonts -->
@@ -18,7 +18,7 @@
       font-family: 'Segoe UI', sans-serif;
     }
     .hero {
-      background: linear-gradient(to right, #0d6efd, #0dcaf0);
+      background: linear-gradient(to right, #161f5e, #140492);
       color: white;
       padding: 80px 20px;
       text-align: center;
@@ -50,10 +50,9 @@
   <!-- Hero Section -->
   <section class="hero">
     <div class="container">
-      <h1>Welcome to Mafiga School System</h1>
+      <h1>Welcome to  School System</h1>
       <p>Efficient and Secure School Result Management</p>
-      <a href="login.php" class="btn btn-light btn-custom"><i class="fas fa-sign-in-alt"></i> Login</a>
-      <a href="login.php" class="btn btn-outline-light btn-custom"><i class="fas fa-user-plus"></i> Register</a>
+      <a href="login.php" class="btn btn-outline-light btn-custom"><i class="fas fa-user-plus"></i> Get Started</a>
     </div>
   </section>
 
@@ -80,7 +79,7 @@
 
   <!-- Footer -->
   <footer>
-    <p>&copy; <?= date('Y') ?> Mafiga School Management System. All Rights Reserved.</p>
+    <p>&copy; <?= date('Y') ?> School Management System. All Rights Reserved.</p>
   </footer>
 
 </body>
