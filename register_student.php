@@ -4,72 +4,114 @@ require_once 'vendor/autoload.php';
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
+function canLoadSpreadsheetFile(string $originalName): array {
+    $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+    $isZipBased = in_array($ext, ['xlsx', 'xlsm', 'xltx', 'xltm', 'ods'], true);
+
+    if ($isZipBased && !class_exists('ZipArchive')) {
+        return [
+            false,
+            'ZIP support is missing. Enable the PHP zip extension in XAMPP php.ini (extension=zip) and restart Apache.'
+        ];
+    }
+
+    return [true, ''];
+}
+
 $msg = "";
+
+$hasFullName = false;
+$hasGender = false;
+$check = $conn->query("SHOW COLUMNS FROM students LIKE 'full_name'");
+if ($check && $check->num_rows > 0) {
+    $hasFullName = true;
+}
+$check = $conn->query("SHOW COLUMNS FROM students LIKE 'gender'");
+if ($check && $check->num_rows > 0) {
+    $hasGender = true;
+}
+
+$nameColumn = $hasFullName ? 'full_name' : 'name';
 
 // Handle Excel Upload
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excel_file'])) {
     $file = $_FILES['excel_file']['tmp_name'];
+    $originalFileName = $_FILES['excel_file']['name'] ?? '';
 
-    try {
-        $spreadsheet = IOFactory::load($file);
-        $sheet = $spreadsheet->getActiveSheet();
-        $rows = $sheet->toArray();
+    [$canLoad, $dependencyError] = canLoadSpreadsheetFile($originalFileName);
+    if (!$canLoad) {
+        $msg .= "<div class='alert alert-danger'>❌ Upload failed: {$dependencyError}</div>";
+    } else {
 
-        $inserted = 0;
-        $skipped = 0;
+        try {
+            $spreadsheet = IOFactory::load($file);
+            $sheet = $spreadsheet->getActiveSheet();
+            $rows = $sheet->toArray();
 
-        foreach ($rows as $index => $row) {
-            if ($index == 0) continue; // skip header
+            $inserted = 0;
+            $skipped = 0;
 
-            $name = trim($row[0]);
-            $class_level = trim($row[1]);
-            $stream = trim($row[2]);
+            foreach ($rows as $index => $row) {
+                if ($index == 0) continue; // skip header
 
-            if ($name === '' || $class_level === '' || $stream === '') {
-                $skipped++;
-                continue;
-            }
+                $name = trim($row[0]);
+                $class_level = trim($row[1]);
+                $stream = trim($row[2]);
+                $gender = trim($row[3] ?? '');
 
-            $stmt = $conn->prepare("SELECT id FROM classes WHERE class_level = ? AND stream = ?");
-            $stmt->bind_param("ss", $class_level, $stream);
-            $stmt->execute();
-            $res = $stmt->get_result();
+                if ($name === '' || $class_level === '' || $stream === '') {
+                    $skipped++;
+                    continue;
+                }
 
-            if ($res->num_rows > 0) {
-                $class_row = $res->fetch_assoc();
-                $class_id = (int) $class_row['id'];
+                $stmt = $conn->prepare("SELECT class_id FROM classes WHERE class_level = ? AND stream = ?");
+                $stmt->bind_param("ss", $class_level, $stream);
+                $stmt->execute();
+                $res = $stmt->get_result();
 
-                $check = $conn->prepare("SELECT id FROM students WHERE name = ? AND class_id = ?");
-                $check->bind_param("si", $name, $class_id);
-                $check->execute();
-                $check_res = $check->get_result();
+                if ($res->num_rows > 0) {
+                    $class_row = $res->fetch_assoc();
+                    $class_id = (int) $class_row['class_id'];
 
-                if ($check_res->num_rows == 0) {
-                    $insert = $conn->prepare("INSERT INTO students (name, class_id) VALUES (?, ?)");
-                    $insert->bind_param("si", $name, $class_id);
-                    $insert->execute();
-                    $inserted++;
+                    $check = $conn->prepare("SELECT student_id FROM students WHERE {$nameColumn} = ? AND class_id = ?");
+                    $check->bind_param("si", $name, $class_id);
+                    $check->execute();
+                    $check_res = $check->get_result();
+
+                    if ($check_res->num_rows == 0) {
+                        if ($hasGender) {
+                            $genderValue = $gender !== '' ? $gender : 'Male';
+                            $insert = $conn->prepare("INSERT INTO students ({$nameColumn}, gender, class_id) VALUES (?, ?, ?)");
+                            $insert->bind_param("ssi", $name, $genderValue, $class_id);
+                        } else {
+                            $insert = $conn->prepare("INSERT INTO students ({$nameColumn}, class_id) VALUES (?, ?)");
+                            $insert->bind_param("si", $name, $class_id);
+                        }
+                        $insert->execute();
+                        $inserted++;
+                    } else {
+                        $skipped++;
+                    }
                 } else {
                     $skipped++;
                 }
-            } else {
-                $skipped++;
             }
-        }
 
-        $msg .= "<div class='alert alert-info'>📥 $inserted students added. ⚠️ $skipped skipped.</div>";
-    } catch (Exception $e) {
-        $msg .= "<div class='alert alert-danger'>❌ Upload failed: " . $e->getMessage() . "</div>";
+            $msg .= "<div class='alert alert-info'>📥 $inserted students added. ⚠️ $skipped skipped.</div>";
+        } catch (Exception $e) {
+            $msg .= "<div class='alert alert-danger'>❌ Upload failed: " . $e->getMessage() . "</div>";
+        }
     }
 }
 
 // Handle Manual Registration
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register_manual'])) {
     $name = trim($_POST['name']);
+    $gender = trim($_POST['gender'] ?? '');
     $class_level = $_POST['class_level'];
     $stream = $_POST['stream'];
 
-    if (!empty($name) && !empty($class_level) && !empty($stream)) {
+    if (!empty($name) && !empty($class_level) && !empty($stream) && (!$hasGender || !empty($gender))) {
         $stmt = $conn->prepare("SELECT class_id FROM classes WHERE class_level = ? AND stream = ?");
         $stmt->bind_param("ss", $class_level, $stream);
         $stmt->execute();
@@ -77,8 +119,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register_manual'])) {
 
         if ($stmt->fetch()) {
             $stmt->close();
-            $stmt = $conn->prepare("INSERT INTO students (name, class_id) VALUES (?, ?)");
-            $stmt->bind_param("si", $name, $class_id);
+            if ($hasGender) {
+                $stmt = $conn->prepare("INSERT INTO students ({$nameColumn}, gender, class_id) VALUES (?, ?, ?)");
+                $stmt->bind_param("ssi", $name, $gender, $class_id);
+            } else {
+                $stmt = $conn->prepare("INSERT INTO students ({$nameColumn}, class_id) VALUES (?, ?)");
+                $stmt->bind_param("si", $name, $class_id);
+            }
             if ($stmt->execute()) {
                 $msg .= '<div class="alert alert-success">✅ Student registered successfully!</div>';
             } else {
@@ -123,8 +170,17 @@ $levels = $conn->query("SELECT DISTINCT class_level FROM classes ORDER BY class_
                     <form method="POST" class="row g-3">
                         <input type="hidden" name="register_manual" value="1">
                         <div class="col-md-12">
-                            <label class="form-label">Student Name:</label>
+                            <label class="form-label">Full Name:</label>
                             <input type="text" name="name" class="form-control" required>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label">Gender:</label>
+                            <select name="gender" class="form-select" <?= $hasGender ? 'required' : 'disabled' ?>>
+                                <option value="">--Select Gender--</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                            </select>
                         </div>
 
                         <div class="col-md-6">
@@ -162,7 +218,7 @@ $levels = $conn->query("SELECT DISTINCT class_level FROM classes ORDER BY class_
                     </form>
 
                     <div class="mt-3 alert alert-info">
-                        <strong>Note:</strong> File must include columns <code>Name</code>, <code>Class</code>, and <code>Stream</code>.
+                        <strong>Note:</strong> File must include columns <code>Name</code>, <code>Class</code>, and <code>Stream</code>. Optional fourth column: <code>Gender</code>.
                     </div>
                 </div>
             </div>
