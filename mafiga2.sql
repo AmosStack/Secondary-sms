@@ -11,6 +11,10 @@ SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
 SET time_zone = "+00:00";
 
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+
 --
 -- Database: `mafiga`
 --
@@ -22,7 +26,7 @@ USE `mafiga`;
 -- Table structure for table `admin`
 --
 
-CREATE TABLE `admin` (
+CREATE TABLE IF NOT EXISTS `admin` (
   `admin_id` int NOT NULL AUTO_INCREMENT,
   `username` varchar(100) NOT NULL,
   `email` varchar(150) NOT NULL,
@@ -43,9 +47,10 @@ CREATE TABLE `admin` (
 -- Table structure for table `subjects`
 --
 
-CREATE TABLE `subjects` (
-  `subject_id` int NOT NULL,
-  `name` varchar(100) NOT NULL
+CREATE TABLE IF NOT EXISTS `subjects` (
+  `subject_id` int NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) NOT NULL,
+  PRIMARY KEY (`subject_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -57,10 +62,11 @@ CREATE TABLE `subjects` (
 -- Table structure for table `classes`
 --
 
-CREATE TABLE `classes` (
+CREATE TABLE IF NOT EXISTS `classes` (
   `class_id` int NOT NULL AUTO_INCREMENT,
   `class_level` varchar(10) NOT NULL,
-  `stream` varchar(50) NOT NULL
+  `stream` varchar(50) NOT NULL,
+  PRIMARY KEY (`class_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -73,12 +79,13 @@ CREATE TABLE `classes` (
 -- Table structure for table `students`
 --
 
-CREATE TABLE `students` (
-  `student_id` int NOT NULL,
+CREATE TABLE IF NOT EXISTS `students` (
+  `student_id` int NOT NULL AUTO_INCREMENT,
   `name` varchar(100) DEFAULT NULL,
   `class_id` int DEFAULT NULL,
-    CONSTRAINT `students_ibfk_1` FOREIGN KEY (`class_id`) REFERENCES `classes` (`class_id`)
-
+  PRIMARY KEY (`student_id`),
+  KEY `class_id` (`class_id`),
+  CONSTRAINT `students_ibfk_1` FOREIGN KEY (`class_id`) REFERENCES `classes` (`class_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -91,10 +98,13 @@ CREATE TABLE `students` (
 -- Table structure for table `class_subjects`
 --
 
-CREATE TABLE `class_subjects` (
-  `class_subject_id` int NOT NULL,
+CREATE TABLE IF NOT EXISTS `class_subjects` (
+  `class_subject_id` int NOT NULL AUTO_INCREMENT,
   `class_id` int DEFAULT NULL,
   `subject_id` int DEFAULT NULL,
+  PRIMARY KEY (`class_subject_id`),
+  KEY `class_id` (`class_id`),
+  KEY `subject_id` (`subject_id`),
   CONSTRAINT `class_subjects_ibfk_1` FOREIGN KEY (`class_id`) REFERENCES `classes` (`class_id`),
   CONSTRAINT `class_subjects_ibfk_2` FOREIGN KEY (`subject_id`) REFERENCES `subjects` (`subject_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -109,12 +119,15 @@ CREATE TABLE `class_subjects` (
 -- Table structure for table `marks`
 --
 
-CREATE TABLE `marks` (
-  `mark_id` int NOT NULL,
+CREATE TABLE IF NOT EXISTS `marks` (
+  `mark_id` int NOT NULL AUTO_INCREMENT,
   `student_id` int NOT NULL,
   `subject_id` int NOT NULL,
   `marks` int NOT NULL CHECK (`marks` >= 0 and `marks` <= 100),
   `date_recorded` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`mark_id`),
+  UNIQUE KEY `unique_mark` (`student_id`,`subject_id`),
+  KEY `fk_subject` (`subject_id`),
   CONSTRAINT `fk_student` FOREIGN KEY (`student_id`) REFERENCES `students` (`student_id`) ON DELETE CASCADE,
   CONSTRAINT `fk_subject` FOREIGN KEY (`subject_id`) REFERENCES `subjects` (`subject_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -122,78 +135,6 @@ CREATE TABLE `marks` (
 --
 -- Dumping data for table `marks`
 --
-
---
--- Indexes for dumped tables
---
---
--- Indexes for table `classes`
---
-ALTER TABLE `classes`
-  ADD PRIMARY KEY (`class_id`);
-
---
--- Indexes for table `class_subjects`
---
-ALTER TABLE `class_subjects`
-  ADD PRIMARY KEY (`class_subject_id`),
-  ADD KEY `class_id` (`class_id`),
-  ADD KEY `subject_id` (`subject_id`);
-
---
--- Indexes for table `marks`
---
-ALTER TABLE `marks`
-  ADD PRIMARY KEY (`mark_id`),
-  ADD UNIQUE KEY `unique_mark` (`student_id`,`subject_id`),
-  ADD KEY `fk_subject` (`subject_id`);
-
---
--- Indexes for table `students`
---
-ALTER TABLE `students`
-  ADD PRIMARY KEY (`student_id`),
-  ADD KEY `class_id` (`class_id`);
-
---
--- Indexes for table `subjects`
---
-ALTER TABLE `subjects`
-  ADD PRIMARY KEY (`subject_id`);
-
---
--- AUTO_INCREMENT for dumped tables
---
-
---
--- AUTO_INCREMENT for table `classes`
---
-ALTER TABLE `classes`
-  MODIFY `class_id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
-
---
--- AUTO_INCREMENT for table `class_subjects`
---
-ALTER TABLE `class_subjects`
-  MODIFY `class_subject_id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
-
---
--- AUTO_INCREMENT for table `marks`
---
-ALTER TABLE `marks`
-  MODIFY `mark_id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
-
---
--- AUTO_INCREMENT for table `students`
---
-ALTER TABLE `students`
-  MODIFY `student_id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
-
---
--- AUTO_INCREMENT for table `subjects`
---
-ALTER TABLE `subjects`
-  MODIFY `subject_id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 COMMIT;
 
