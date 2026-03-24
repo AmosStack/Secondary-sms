@@ -1,70 +1,137 @@
 <?php
-function getGradeF1toF4($avg) {
-    if ($avg >= 75) return "A";
-    if ($avg >= 65) return "B";
-    if ($avg >= 55) return "C";
-    if ($avg >= 35) return "D";
-    return "F";
-}
 
-function getGradeF5toF6($avg) {
-    if ($avg >= 80) return "A";
-    if ($avg >= 70) return "B";
-    if ($avg >= 60) return "C";
-    if ($avg >= 50) return "D";
-    if ($avg >= 40) return "E";
-    if ($avg >= 35) return "S";
-    return "F";
-}
-
-// Grade comment map
-$gradeComments = [
-    'A' => 'Excellent',
-    'B' => 'Very Good',
-    'C' => 'Good',
-    'D' => 'Fair',
-    'E' => 'Poor',
-    'S' => 'Very Poor',
-    'F' => 'Fail'
-];
-
-function getDivision($form, $subjectAverages) {
-    global $gradeComments;
-
-    // Division boundaries
-    $divisions_f1_f4 = [
-        "Div 1" => [7, 17],
-        "Div 2" => [18, 21],
-        "Div 3" => [22, 25],
-        "Div 4" => [26, 33],
-        "Div 0" => [34, 35]
-    ];
-
-    $divisions_f5_f6 = [
-        "Div 1" => [3, 9],
-        "Div 2" => [10, 12],
-        "Div 3" => [13, 17],
-        "Div 4" => [18, 19],
-        "Div 0" => [20, 21]
-    ];
-
-    if ($form < 1 || $form > 6 || !is_array($subjectAverages) || count($subjectAverages) === 0) {
-        return "Invalid class";
+if (!function_exists('getGradeCommentsMap')) {
+    function getGradeCommentsMap(): array {
+        return [
+            'A' => 'Excellent',
+            'B' => 'Very Good',
+            'C' => 'Good',
+            'D' => 'Fair',
+            'E' => 'Poor',
+            'S' => 'Very Poor',
+            'F' => 'Fail'
+        ];
     }
+}
 
-    $subjectGrades = [];
-    $divisionPoints = [];
+if (!function_exists('getSwahiliGradeCommentsMap')) {
+    function getSwahiliGradeCommentsMap(): array {
+        return [
+            'A' => 'UFAULU MZURI',
+            'B' => 'VIZURI',
+            'C' => 'WASTANI',
+            'D' => 'HAFIFU',
+            'E' => 'HAFIFU',
+            'S' => 'HAFIFU',
+            'F' => 'AMEFELI'
+        ];
+    }
+}
 
-    if ($form <= 4) {
-        $gradePoints = ['A' => 1, 'B' => 2, 'C' => 3, 'D' => 4, 'F' => 5];
-        $divisions = $divisions_f1_f4;
-        $numSubjects = 7;
+if (!function_exists('getGradeF1toF4')) {
+    function getGradeF1toF4($avg): string {
+        if ($avg >= 75) return 'A';
+        if ($avg >= 65) return 'B';
+        if ($avg >= 55) return 'C';
+        if ($avg >= 35) return 'D';
+        return 'F';
+    }
+}
+
+if (!function_exists('getGradeF5toF6')) {
+    function getGradeF5toF6($avg): string {
+        if ($avg >= 80) return 'A';
+        if ($avg >= 70) return 'B';
+        if ($avg >= 60) return 'C';
+        if ($avg >= 50) return 'D';
+        if ($avg >= 40) return 'E';
+        if ($avg >= 35) return 'S';
+        return 'F';
+    }
+}
+
+if (!function_exists('getGradeByForm')) {
+    function getGradeByForm(int $form, $avg): string {
+        return $form <= 4 ? getGradeF1toF4($avg) : getGradeF5toF6($avg);
+    }
+}
+
+if (!function_exists('getGradeAndCommentByForm')) {
+    function getGradeAndCommentByForm(int $form, $avg, string $language = 'en'): array {
+        $grade = getGradeByForm($form, $avg);
+        $comments = strtolower($language) === 'sw'
+            ? getSwahiliGradeCommentsMap()
+            : getGradeCommentsMap();
+
+        return [$grade, $comments[$grade] ?? '-'];
+    }
+}
+
+if (!function_exists('getGradePointByForm')) {
+    function getGradePointByForm(int $form, string $grade): ?int {
+        $gradePoints = $form <= 4
+            ? ['A' => 1, 'B' => 2, 'C' => 3, 'D' => 4, 'F' => 5]
+            : ['A' => 1, 'B' => 2, 'C' => 3, 'D' => 4, 'E' => 5, 'S' => 6, 'F' => 7];
+
+        return $gradePoints[$grade] ?? null;
+    }
+}
+
+if (!function_exists('getDivisionRangesByForm')) {
+    function getDivisionRangesByForm(int $form): array {
+        return $form <= 4
+            ? [
+                'Div 1' => [7, 17],
+                'Div 2' => [18, 21],
+                'Div 3' => [22, 25],
+                'Div 4' => [26, 33],
+                'Div 0' => [34, 35]
+            ]
+            : [
+                'Div 1' => [3, 9],
+                'Div 2' => [10, 12],
+                'Div 3' => [13, 17],
+                'Div 4' => [18, 19],
+                'Div 0' => [20, 21]
+            ];
+    }
+}
+
+if (!function_exists('getDivisionLabelByPoints')) {
+    function getDivisionLabelByPoints(int $form, int $totalPoints): string {
+        foreach (getDivisionRangesByForm($form) as $division => $range) {
+            if ($totalPoints >= $range[0] && $totalPoints <= $range[1]) {
+                return $division;
+            }
+        }
+
+        return 'No division';
+    }
+}
+
+if (!function_exists('calculateDivisionResult')) {
+    function calculateDivisionResult(int $form, array $subjectAverages): array {
+        if ($form < 1 || $form > 6 || count($subjectAverages) === 0) {
+            return [
+                'valid' => false,
+                'error' => 'Invalid class or no subjects provided',
+                'subject_grades' => [],
+                'division_points' => [],
+                'used_points' => [],
+                'required_subjects' => $form <= 4 ? 7 : 3,
+                'total_points' => 0,
+                'division' => 'No division'
+            ];
+        }
+
+        $gradeComments = getGradeCommentsMap();
+        $subjectGrades = [];
+        $divisionPoints = [];
+        $requiredSubjects = $form <= 4 ? 7 : 3;
 
         foreach ($subjectAverages as $subject => $avg) {
-            $grade = getGradeF1toF4($avg);
-            $point = $gradePoints[$grade] ?? null;
-
-            if ($point === null) return "Invalid grade for $subject";
+            $grade = getGradeByForm($form, $avg);
+            $point = getGradePointByForm($form, $grade);
 
             $subjectGrades[$subject] = [
                 'average' => $avg,
@@ -72,92 +139,61 @@ function getDivision($form, $subjectAverages) {
                 'comment' => $gradeComments[$grade] ?? '-',
                 'point' => $point
             ];
+
+            if ($point === null) {
+                continue;
+            }
+
+            if ($form >= 5 && strtolower(trim((string)$subject)) === 'general studies') {
+                continue;
+            }
 
             $divisionPoints[] = $point;
         }
-    } else {
-        $gradePoints = ['A' => 1, 'B' => 2, 'C' => 3, 'D' => 4, 'E' => 5, 'S' => 6, 'F' => 7];
-        $divisions = $divisions_f5_f6;
-        $numSubjects = 3;
 
-        foreach ($subjectAverages as $subject => $avg) {
-            $grade = getGradeF5toF6($avg);
-            $point = $gradePoints[$grade] ?? null;
-
-            if ($point === null) return "Invalid grade for $subject";
-
-            $subjectGrades[$subject] = [
-                'average' => $avg,
-                'grade' => $grade,
-                'comment' => $gradeComments[$grade] ?? '-',
-                'point' => $point
+        if (count($divisionPoints) < $requiredSubjects) {
+            return [
+                'valid' => false,
+                'error' => "Not enough valid subjects for division (need at least {$requiredSubjects})",
+                'subject_grades' => $subjectGrades,
+                'division_points' => $divisionPoints,
+                'used_points' => [],
+                'required_subjects' => $requiredSubjects,
+                'total_points' => 0,
+                'division' => 'No division'
             ];
-
-            // ✅ Exclude General Studies from division calculation
-            if (strtolower(trim($subject)) !== 'general studies') {
-                $divisionPoints[] = $point;
-            }
         }
+
+        sort($divisionPoints);
+        $usedPoints = array_slice($divisionPoints, 0, $requiredSubjects);
+        $totalPoints = array_sum($usedPoints);
+        $division = getDivisionLabelByPoints($form, $totalPoints);
+
+        return [
+            'valid' => true,
+            'error' => null,
+            'subject_grades' => $subjectGrades,
+            'division_points' => $divisionPoints,
+            'used_points' => $usedPoints,
+            'required_subjects' => $requiredSubjects,
+            'total_points' => $totalPoints,
+            'division' => $division
+        ];
     }
-
-    // Ensure enough subjects for division
-    if (count($divisionPoints) < $numSubjects) {
-        return "Not enough valid subjects for division (need at least $numSubjects)";
-    }
-
-    // Calculate division
-    sort($divisionPoints);
-    $totalPoints = array_sum(array_slice($divisionPoints, 0, $numSubjects));
-    $divisionLabel = "No division";
-
-    foreach ($divisions as $div => [$min, $max]) {
-        if ($totalPoints >= $min && $totalPoints <= $max) {
-            $divisionLabel = "$div (Total Points: $totalPoints)";
-            break;
-        }
-    }
-
-    // 🖥️ Display Subject Table (All Subjects)
-    echo "<h3>Subject Results:</h3>";
-    echo "<table border='1' cellpadding='5' style='border-collapse: collapse'>";
-    echo "<tr><th>Subject</th><th>Average</th><th>Grade</th><th>Comment</th></tr>";
-    foreach ($subjectGrades as $subject => $data) {
-        echo "<tr>
-            <td>$subject</td>
-            <td>{$data['average']}</td>
-            <td>{$data['grade']}</td>
-            <td>{$data['comment']}</td>
-        </tr>";
-    }
-    echo "</table><br>";
-
-    return $divisionLabel;
 }
 
-// 🔹 Sample test
-$form6 = [
-    'Physics' => 83,
-    'Chemistry' => 74,
-    'Advanced Math' => 65,
-    'General Studies' => 99  // included in display, excluded in division
-];
+if (!function_exists('getDivision')) {
+    function getDivision($form, $subjectAverages): string {
+        if (!is_array($subjectAverages)) {
+            return 'Invalid class';
+        }
 
-$form3 = [
-    'Math' => 82,
-    'English' => 72,
-    'Science' => 69,
-    'Geography' => 55,
-    'Civics' => 46,
-    'History' => 78,
-    'Kiswahili' => 64,
-    'ICT' => 36
-];
+        $result = calculateDivisionResult((int)$form, $subjectAverages);
+        if (!$result['valid']) {
+            return $result['error'] ?? 'No division';
+        }
 
-echo "<h2>Form 6 Result:</h2>";
-echo getDivision(6, $form6);
+        return $result['division'] . ' (Total Points: ' . $result['total_points'] . ')';
+    }
+}
 
-echo "<hr>";
-
-echo "<h2>Form 3 Result:</h2>";
-echo getDivision(3, $form3);
-?>
