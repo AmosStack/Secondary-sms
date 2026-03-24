@@ -16,22 +16,67 @@ if (!$class) {
     die('Class not found.');
 }
 
+// Fetch all subjects and current class subject mappings
+$subjects = [];
+$subjectResult = $conn->query('SELECT subject_id, name FROM subjects ORDER BY name');
+while ($row = $subjectResult->fetch_assoc()) {
+    $subjects[] = $row;
+}
+
+$selectedSubjectIds = [];
+$stmt = $conn->prepare('SELECT subject_id FROM class_subjects WHERE class_id = ?');
+$stmt->bind_param('i', $classId);
+$stmt->execute();
+$subjectMapResult = $stmt->get_result();
+while ($row = $subjectMapResult->fetch_assoc()) {
+    $selectedSubjectIds[] = (int)$row['subject_id'];
+}
+$stmt->close();
+
 $message = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $classLevel = trim($_POST['class_level'] ?? '');
     $stream = trim($_POST['stream'] ?? '');
+    $subjectsInput = $_POST['subjects'] ?? [];
+    $subjectsInput = array_values(array_unique(array_map('intval', (array)$subjectsInput)));
 
     if ($classLevel === '' || $stream === '') {
         $message = '<div class="alert alert-danger">Class level and stream are required.</div>';
     } else {
+        $conn->begin_transaction();
+
         $stmt = $conn->prepare('UPDATE classes SET class_level = ?, stream = ? WHERE class_id = ?');
         $stmt->bind_param('ssi', $classLevel, $stream, $classId);
-        if ($stmt->execute()) {
+        $ok = $stmt->execute();
+        $stmt->close();
+
+        if ($ok) {
+            $stmt = $conn->prepare('DELETE FROM class_subjects WHERE class_id = ?');
+            $stmt->bind_param('i', $classId);
+            $ok = $stmt->execute();
+            $stmt->close();
+        }
+
+        if ($ok && $subjectsInput) {
+            $stmt = $conn->prepare('INSERT INTO class_subjects (class_id, subject_id) VALUES (?, ?)');
+            foreach ($subjectsInput as $subjectId) {
+                $stmt->bind_param('ii', $classId, $subjectId);
+                if (!$stmt->execute()) {
+                    $ok = false;
+                    break;
+                }
+            }
+            $stmt->close();
+        }
+
+        if ($ok) {
+            $conn->commit();
             header('Location: view_classes.php');
             exit;
+        } else {
+            $conn->rollback();
+            $message = '<div class="alert alert-danger">Failed to update class and subjects.</div>';
         }
-        $message = '<div class="alert alert-danger">Failed to update class.</div>';
-        $stmt->close();
     }
 }
 ?>
@@ -62,6 +107,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="mb-3">
                     <label class="form-label">Stream</label>
                     <input type="text" class="form-control" name="stream" required value="<?= htmlspecialchars($class['stream']) ?>">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Subjects</label>
+                    <div class="row g-2">
+                        <?php foreach ($subjects as $subject): ?>
+                            <div class="col-md-6">
+                                <div class="form-check border rounded p-2">
+                                    <input
+                                        class="form-check-input"
+                                        type="checkbox"
+                                        name="subjects[]"
+                                        value="<?= (int)$subject['subject_id'] ?>"
+                                        id="subject_<?= (int)$subject['subject_id'] ?>"
+                                        <?= in_array((int)$subject['subject_id'], $selectedSubjectIds, true) ? 'checked' : '' ?>
+                                    >
+                                    <label class="form-check-label" for="subject_<?= (int)$subject['subject_id'] ?>">
+                                        <?= htmlspecialchars($subject['name']) ?>
+                                    </label>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
                 </div>
                 <button type="submit" class="btn btn-primary">Save Changes</button>
             </form>
