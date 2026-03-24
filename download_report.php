@@ -11,7 +11,7 @@ $student_id = intval($_GET['student_id']);
 
 // Fetch student details
 $stmt = $conn->prepare("
-    SELECT s.name, c.class_level, c.stream 
+    SELECT s.full_name, c.class_level, c.stream 
     FROM students s 
     JOIN classes c ON s.class_id = c.class_id 
     WHERE s.student_id = ?
@@ -83,7 +83,7 @@ foreach ($subjects as $s) {
     $totalSubjects++;
 }
 $average = $totalSubjects ? round($totalMarks / $totalSubjects, 2) : 0;
-$form = (int)$student['class_level'];
+$form = $student['class_level'];
 [$finalGrade, $finalRemark] = getGradeAndCommentByForm($form, $average, 'sw');
 
 $subjectAverages = [];
@@ -102,7 +102,7 @@ $finalComments = getFinalComments($average);
 $pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
 $pdf->SetCreator('Mafiga SMS');
 $pdf->SetAuthor('Mafiga School');
-$pdf->SetTitle('Ripoti ya Mwanafunzi - ' . $student['name']);
+$pdf->SetTitle('Ripoti ya Mwanafunzi - ' . $student['full_name']);
 $pdf->SetMargins(15, 20, 15);
 $pdf->AddPage();
 
@@ -130,7 +130,7 @@ $html = <<<EOD
 
 <table>
     <tr>
-        <td><strong>Jina:</strong> {$student['name']}</td>
+        <td><strong>Jina:</strong> {$student['full_name']}</td>
         <td><strong>Kidato:</strong> Kidato Cha {$student['class_level']}</td>
         <td><strong>Muhula:</strong> {$term} {$year}</td>
     </tr>
@@ -217,7 +217,7 @@ EOD;
 
 $pdf->writeHTML($html, true, false, true, false, '');
 
-$filename = preg_replace('/\s+/', '_', strtoupper($student['name'])) . '.pdf';
+$filename = preg_replace('/\s+/', '_', strtoupper($student['full_name'])) . '.pdf';
 
 $pdf->Output($filename, 'D'); // 'D' forces download
 
