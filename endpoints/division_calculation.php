@@ -1,5 +1,23 @@
 <?php
 
+if (!function_exists('normalizeFormLevel')) {
+    function normalizeFormLevel($form): int {
+        if (is_int($form)) {
+            return $form;
+        }
+
+        if (is_numeric($form)) {
+            return (int)$form;
+        }
+
+        if (is_string($form) && preg_match('/(\d+)/', $form, $matches)) {
+            return (int)$matches[1];
+        }
+
+        return 0;
+    }
+}
+
 if (!function_exists('getGradeCommentsMap')) {
     function getGradeCommentsMap(): array {
         return [
@@ -51,13 +69,15 @@ if (!function_exists('getGradeF5toF6')) {
 }
 
 if (!function_exists('getGradeByForm')) {
-    function getGradeByForm(int $form, $avg): string {
+    function getGradeByForm($form, $avg): string {
+        $form = normalizeFormLevel($form);
         return $form <= 4 ? getGradeF1toF4($avg) : getGradeF5toF6($avg);
     }
 }
 
 if (!function_exists('getGradeAndCommentByForm')) {
-    function getGradeAndCommentByForm(int $form, $avg, string $language = 'en'): array {
+    function getGradeAndCommentByForm($form, $avg, string $language = 'en'): array {
+        $form = normalizeFormLevel($form);
         $grade = getGradeByForm($form, $avg);
         $comments = strtolower($language) === 'sw'
             ? getSwahiliGradeCommentsMap()
@@ -68,7 +88,8 @@ if (!function_exists('getGradeAndCommentByForm')) {
 }
 
 if (!function_exists('getGradePointByForm')) {
-    function getGradePointByForm(int $form, string $grade): ?int {
+    function getGradePointByForm($form, string $grade): ?int {
+        $form = normalizeFormLevel($form);
         $gradePoints = $form <= 4
             ? ['A' => 1, 'B' => 2, 'C' => 3, 'D' => 4, 'F' => 5]
             : ['A' => 1, 'B' => 2, 'C' => 3, 'D' => 4, 'E' => 5, 'S' => 6, 'F' => 7];
@@ -78,7 +99,8 @@ if (!function_exists('getGradePointByForm')) {
 }
 
 if (!function_exists('getDivisionRangesByForm')) {
-    function getDivisionRangesByForm(int $form): array {
+    function getDivisionRangesByForm($form): array {
+        $form = normalizeFormLevel($form);
         return $form <= 4
             ? [
                 'Div 1' => [7, 17],
@@ -98,7 +120,8 @@ if (!function_exists('getDivisionRangesByForm')) {
 }
 
 if (!function_exists('getDivisionLabelByPoints')) {
-    function getDivisionLabelByPoints(int $form, int $totalPoints): string {
+    function getDivisionLabelByPoints($form, int $totalPoints): string {
+        $form = normalizeFormLevel($form);
         foreach (getDivisionRangesByForm($form) as $division => $range) {
             if ($totalPoints >= $range[0] && $totalPoints <= $range[1]) {
                 return $division;
@@ -110,7 +133,8 @@ if (!function_exists('getDivisionLabelByPoints')) {
 }
 
 if (!function_exists('calculateDivisionResult')) {
-    function calculateDivisionResult(int $form, array $subjectAverages): array {
+    function calculateDivisionResult($form, array $subjectAverages): array {
+        $form = normalizeFormLevel($form);
         if ($form < 1 || $form > 6 || count($subjectAverages) === 0) {
             return [
                 'valid' => false,
@@ -188,7 +212,7 @@ if (!function_exists('getDivision')) {
             return 'Invalid class';
         }
 
-        $result = calculateDivisionResult((int)$form, $subjectAverages);
+        $result = calculateDivisionResult($form, $subjectAverages);
         if (!$result['valid']) {
             return $result['error'] ?? 'No division';
         }
