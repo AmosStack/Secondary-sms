@@ -5,7 +5,7 @@ session_start();
 include('includes/db.php');
 
 if (isset($_SESSION['admin_id'])) {
-  header("Location: dashboard.php");
+  header("Location: dashboard");
   exit;
 }
 
@@ -50,7 +50,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($isValidPassword) {
           $_SESSION['admin_id'] = $admin['admin_id'];
           $_SESSION['username'] = $admin['username'];
-          header("Location: dashboard.php");
+                  header("Location: dashboard");
           $stmt->close();
           exit;
         }
@@ -90,7 +90,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
   <div class="container" id="container">
     <div class="form-container sign-up">
-      <form action="register.php" method="POST">
+      <form action="register" method="POST">
         <h1>Create Account</h1>
         <div class="social-icons">
           <a href="#" class="icon"><i class="fab fa-google"></i></a>
@@ -105,7 +105,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </div>
 
     <div class="form-container sign-in">
-      <form action="login.php" method="POST">
+      <form action="login" method="POST">
         <h1>Log in</h1>
         <div class="social-icons">
           <a href="#" class="icon"><i class="fab fa-google"></i></a>
