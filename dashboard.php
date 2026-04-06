@@ -19,7 +19,7 @@ $total_students = $conn->query("SELECT COUNT(*) AS cnt FROM students")->fetch_as
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Mafiga School Management Dashboard</title>
+  <title>School Management Dashboard</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <style>
@@ -73,10 +73,10 @@ $total_students = $conn->query("SELECT COUNT(*) AS cnt FROM students")->fetch_as
     <div class="col-md-3 col-lg-2 sidebar">
       <h4 class="text-white mb-4">📘 Academic IMS</h4>
       <a href="dashboard.php"><i class="fas fa-home"></i> Dashboard</a>
-      <a href="view_classes.php"><i class="fas fa-chalkboard-teacher"></i> View Classes</a>
       <a href="register_class.php"><i class="fas fa-building"></i> Register Class</a>
-      <a href="register_student.php"><i class="fas fa-user-graduate"></i> Register Students</a>
+      <a href="view_classes.php"><i class="fas fa-chalkboard-teacher"></i> View Classes</a>
       <a href="create_subject.php"><i class="fas fa-book"></i> Create Subjects</a>
+      <a href="register_student.php"><i class="fas fa-user-graduate"></i> Register Students</a>
       <a href="enter_results.php"><i class="fas fa-pen"></i> Enter Results</a>
 
       <!-- Students Dropdown -->
