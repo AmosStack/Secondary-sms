@@ -85,7 +85,7 @@ $finalComments = getFinalComments($average);
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Ripoti ya Mwanafunzi</title>
+<title>Students report</title>
 <style>
   body {
     font-family: "Times New Roman", serif;
