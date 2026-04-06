@@ -185,7 +185,7 @@ body{
     align-items: center;
     justify-content: center;
     flex-direction: column;
-    padding: 0 40px;
+    padding: 20px 40px;
     text-align: center;
     top: 0;
     transform: translateX(0);
@@ -208,4 +208,9 @@ body{
 
 .container.active .toggle-right{
     transform: translateX(200%);
+}
+
+
+.toggle-panel .toggle-right h1{
+    padding: 10px 15px;
 }
