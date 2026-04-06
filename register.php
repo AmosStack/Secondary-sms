@@ -9,13 +9,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if ($username === '' || $email === '' || $plainPassword === '') {
         $_SESSION['error'] = "All fields are required.";
-        header("Location: login.php");
+        header("Location: login");
         exit;
     }
 
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $_SESSION['error'] = "Please enter a valid email address.";
-        header("Location: login.php");
+        header("Location: login");
         exit;
     }
 
@@ -32,7 +32,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($checkResult && $checkResult->num_rows > 0) {
             $_SESSION['error'] = "An account with this email already exists.";
             $checkStmt->close();
-            header("Location: login.php");
+            header("Location: login");
             exit;
         }
 
@@ -47,18 +47,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         
         if ($stmt->execute()) {
             $_SESSION['message'] = "Registration successful. Please login.";
-            header("Location: login.php");
+            header("Location: login");
             exit;
         } else {
             $_SESSION['error'] = "Registration failed. Please try again.";
-            header("Location: login.php");
+            header("Location: login");
             exit;
         }
 
         $stmt->close();
     } else {
         $_SESSION['error'] = "System error while creating account.";
-        header("Location: login.php");
+        header("Location: login");
         exit;
     }
 }
