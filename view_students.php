@@ -130,6 +130,7 @@ if ($class_ids) {
                     <th style="width: 180px;">Actions</th>
                 </tr>
             </thead>
+
             <tbody>
                 <?php if ($students): ?>
                     <?php foreach ($students as $i => $student): ?>
@@ -141,7 +142,7 @@ if ($class_ids) {
                             <td><?= htmlspecialchars($student['stream']) ?></td>
                             <td>
                                 <a href="edit_student.php?id=<?= (int)$student['student_id'] ?>" class="btn btn-sm btn-outline-primary">Edit</a>
-                                <a href="delete_student.php?id=<?= (int)$student['student_id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this student?');">Delete</a>
+                                <a href="endpoints/delete_student.php<?= (int)$student['student_id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this student?');">Delete</a>
                             </td>
                         </tr>
                     <?php endforeach; ?>
