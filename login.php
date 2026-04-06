@@ -4,28 +4,63 @@ ini_set('display_errors', 1);
 session_start();
 include('includes/db.php');
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $email = trim($_POST['email']);
-    $password = trim($_POST['password']);
+if (isset($_SESSION['admin_id'])) {
+  header("Location: dashboard.php");
+  exit;
+}
 
+$error = $_SESSION['error'] ?? '';
+$message = $_SESSION['message'] ?? '';
+unset($_SESSION['error'], $_SESSION['message']);
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+  $email = trim($_POST['email'] ?? '');
+  $password = trim($_POST['password'] ?? '');
+
+  if ($email === '' || $password === '') {
+    $error = "Please enter email and password.";
+  } else {
     $sql = "SELECT * FROM admin WHERE email = ?";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("s", $email);
-    $stmt->execute();
-    $result = $stmt->get_result();
 
-    if ($result->num_rows == 1) {
+    if ($stmt) {
+      $stmt->bind_param("s", $email);
+      $stmt->execute();
+      $result = $stmt->get_result();
+
+      if ($result && $result->num_rows === 1) {
         $admin = $result->fetch_assoc();
-        if (password_verify($password, $admin['password'])) {
-            $_SESSION['admin_id'] = $admin['admin_id'];
-            $_SESSION['username'] = $admin['username'];
-            header("Location: dashboard.php");
-            exit;
-        } else {
-            echo "<div style='color: red; text-align: center;'>❌ Invalid password.</div>";
+        $dbPassword = $admin['password'];
+
+        $isValidPassword = password_verify($password, $dbPassword);
+
+        // Backward compatibility in case old records used plain text passwords.
+        if (!$isValidPassword && hash_equals($dbPassword, $password)) {
+          $isValidPassword = true;
+
+          $rehash = password_hash($password, PASSWORD_DEFAULT);
+          $updateStmt = $conn->prepare("UPDATE admin SET password = ? WHERE admin_id = ?");
+          if ($updateStmt) {
+            $updateStmt->bind_param("si", $rehash, $admin['admin_id']);
+            $updateStmt->execute();
+            $updateStmt->close();
+          }
         }
+
+        if ($isValidPassword) {
+          $_SESSION['admin_id'] = $admin['admin_id'];
+          $_SESSION['username'] = $admin['username'];
+          header("Location: dashboard.php");
+          $stmt->close();
+          exit;
+        }
+      }
+
+      $error = "Invalid email or password.";
+      $stmt->close();
     } else {
-        echo "<div style='color: red; text-align: center;'>❌ Email not found.</div>";
+      $error = "System error during login. Please try again.";
+    }
     }
 }
 ?>
@@ -38,11 +73,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title> Login Register form</title>
   <link rel="stylesheet" href="assets/css/stylees.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
 <body>
+  <?php if (!empty($error)): ?>
+    <div style="color: red; text-align: center; margin-bottom: 10px; font-weight: bold;">
+      <?php echo htmlspecialchars($error); ?>
+    </div>
+  <?php endif; ?>
+
+  <?php if (!empty($message)): ?>
+    <div style="color: green; text-align: center; margin-bottom: 10px; font-weight: bold;">
+      <?php echo htmlspecialchars($message); ?>
+    </div>
+  <?php endif; ?>
+
   <div class="container" id="container">
     <div class="form-container sign-up">
       <form action="register.php" method="POST">
