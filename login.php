@@ -36,7 +36,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mafiga Admin Panel</title>
+  <title> Login Register form</title>
   <link rel="stylesheet" href="assets/css/stylees.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
@@ -83,13 +83,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
           <button class="hidden" id="login">Sign In</button>
         </div>
         <div class="toggle-panel toggle-right">
-          <h1>Hello, Friend!</h1>
+          <h1>Hello, Teacher!</h1>
           <p>Don't have an account? Register here</p>
           <button class="hidden" id="register">Sign Up</button>
         </div>
       </div>
     </div>
   </div>
+  
   <script src="assets/js/script.js"></script>
 </body>
 </html>
