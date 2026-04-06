@@ -50,7 +50,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($isValidPassword) {
           $_SESSION['admin_id'] = $admin['admin_id'];
           $_SESSION['username'] = $admin['username'];
-                  header("Location: dashboard");
+          header("Location: dashboard");
           $stmt->close();
           exit;
         }
@@ -61,7 +61,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     } else {
       $error = "System error during login. Please try again.";
     }
-    }
+  }
 }
 ?>
 
