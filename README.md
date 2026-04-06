@@ -13,7 +13,7 @@ This version includes:
 
 ## Core Features
 
-- Admin authentication (`admin` table)
+- Admin authentication 
 - Subject management (create, edit, delete)
 - Class + stream registration and subject assignment
 - Student registration:
