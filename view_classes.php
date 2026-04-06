@@ -39,7 +39,7 @@ include 'includes/db.php';
                                 <td>{$row['stream']}</td>
                                 <td>
                                     <a class='btn btn-sm btn-outline-primary' href='edit_class.php?id={$row['class_id']}'>Edit</a>
-                                    <a class='btn btn-sm btn-outline-danger' href='delete_class.php?id={$row['class_id']}' onclick=\"return confirm('Delete this class?');\">Delete</a>
+                                    <a class='btn btn-sm btn-outline-danger' href='endpoints/delete_class.php?id={$row['class_id']}' onclick=\"return confirm('Delete this class?');\">Delete</a>
                                 </td>
                               </tr>";
                         $i++;
